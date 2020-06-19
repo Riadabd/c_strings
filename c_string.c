@@ -127,50 +127,6 @@ static char* int_to_string(int x) {
 	return str;
 }
 
-static void subs_string(const c_string* s, c_string* new, const size_t positions[], const size_t num_elements, const char* message, const size_t length) {
-	size_t pointer = 0;
-	size_t last_pos = 0;
-	size_t i = 0;
-	if (positions[0] == 0) {
-		memcpy(new->string, s->string, s->length);
-		pointer = s->length;
-		i = 1;
-		last_pos = positions[0];
-		// If there's only one '{}', we need to copy the remaining part.
-		if (num_elements == 1) {
-			memcpy(new->string + pointer, message + 2, length - 2);
-		}
-	}
-	else {
-		memcpy(new->string, message, positions[i]);
-		pointer += positions[i];
-		memcpy(new->string + pointer, s->string, s->length);
-		pointer += s->length;
-		i = 1;
-		last_pos = positions[0];
-		if (num_elements == 1) {
-			memcpy(new->string + pointer, message + positions[0] + 2, length - positions[0] - 2);
-		}
-	}
-	while(i < num_elements) {
-		memcpy(new->string + pointer, message + positions[i - 1] + 2, positions[i] - last_pos - 2);
-		pointer += positions[i] - last_pos - 2;
-		memcpy(new->string + pointer, s->string, s->length);
-		pointer += s->length;
-		last_pos = positions[i];
-		++i;
-		if (i == num_elements) {
-			memcpy(new->string + pointer, message + positions[i - 1] + 2, length - positions[i - 1] - 2);
-		}
-	}
-}
-
-static void initialize_string(c_string* s, size_t length) {
-	s->string = malloc(length + 1);
-	memset(s->string, 0, length);
-	s->string[length] = '\0';
-}
-
 c_string** string_delim(const c_string* s, const char* delim) {
 	
 	// Count number of delimiter occurence
