@@ -1,7 +1,7 @@
 /*
- * c_strings.h
+ * c_string.h
  * 
- * Copyright 2017 Riad Abdallah <riad.abdallah@hotmail.com>
+ * Copyright 2020 Riad Abdallah <riad.abdallah@hotmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@
  * 
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -36,11 +35,6 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
-#define INT_ADD_OVERFLOW_P(a, b)                                       \
-   __builtin_add_overflow_p (a, b, (__typeof__ ((a) + (b))) 0)
-
-
 
 enum {
 	COPY_ERROR,
@@ -58,26 +52,23 @@ void create_string(c_string* s, char* input);
 void create_string_from_length(c_string* s, char* input, size_t length);
 /* Initialize string buffer */
 c_string* initialize_buffer(size_t length);
+
 /* Free the string's content and the string itself */
 void destroy_string(c_string* input);
-/* Free the memory allocated for a char* by the stack allocated string */
-void destroy_local_string(c_string* input);
-/* Concatenate input into string s */
-void string_concat(c_string* s, const char* input);
-
-void string_modify(c_string* s, const char* input);
-int string_copy(c_string* dest, const c_string* src);
-void actual_print(const c_string* s, const char* message, va_list argp);
-void print(const c_string* s, const char* message, ...);
-/* Read stdin input into c_string */
-void scan_string(c_string* s, const char* prompt);
-/* Split string according to given delimiter */
-c_string** string_delim(const c_string* s, const char* delim);
-c_string* trim_char(const c_string* s, const char c);
-/* Help function to pretty print the result of string_delim */
-void pretty_print(c_string** s);
 /* Help function used to free the memory used by the c_string** in string_delim */
 void destroy_delim_string(c_string** s);
 
+/* Concatenate input into string s */
+void string_concat(c_string* s, const char* input);
+void string_modify(c_string* s, const char* input);
+int string_copy(c_string* dest, const c_string* src);
 
-c_string* read_from_file(const char* filename);
+void print(const c_string* s);
+void print_delim_strings(c_string** s);
+
+/* Read stdin input into c_string */
+void scan_string(c_string* s, const char* prompt);
+
+/* Split string according to given delimiter */
+c_string** string_delim(const c_string* s, const char* delim);
+c_string* trim_char(const c_string* s, const char c);

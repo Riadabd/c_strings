@@ -1,7 +1,7 @@
 /*
- * c_strings.c
+ * c_string.c
  * 
- * Copyright 2017 Riad Abdallah <riad.abdallah@hotmail.com>
+ * Copyright 2020 Riad Abdallah <riad.abdallah@hotmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  * 
- * clang -O1 -g -fsanitize=undefined -fno-omit-frame-pointer c_strings.c main.c -o test
- * gcc -Wall -Wextra c_strings.c main.c -o test
+ * clang -O1 -g -fsanitize=undefined -fno-omit-frame-pointer c_string.c main.c -o test
+ * gcc -Wall -Wextra c_string.c main.c -o test
  * 
  */
 
@@ -93,11 +93,6 @@ c_string* initialize_buffer(size_t length) {
 void destroy_string(c_string* input) {
 	free(input->string);
 	free(input);
-	// ASK: Is it good practice to set to NULL after freeing?
-}
-
-void destroy_local_string(c_string* input) {
-	free(input->string);
 	// ASK: Is it good practice to set to NULL after freeing?
 }
 
@@ -176,55 +171,6 @@ static void initialize_string(c_string* s, size_t length) {
 	s->string[length] = '\0';
 }
 
-// Message should include '{}' to signify where the string needs to be printed	
-void actual_print(const c_string* s, const char* message, va_list argp) {
-	// NOTE: Don't use function composition inside (f)printf
-	c_string local = {NULL, 0};
-	string_modify(&local, message);
-	const size_t size = (local.length % 2 == 0) ? (local.length / 2) : ((local.length - 1) / 2);
-	size_t positions[size]; /* Undefined behavior? */
-	size_t counter = 0;
-	size_t num_of_digits = count_bchop(s->length);
-	// Find instances of '{}'
-	for(size_t i = 0; i < local.length - 1; i++) {
-		if (local.string[i] == '{' && local.string[i + 1] == '}') {
-			positions[counter] = i;
-			++counter;
-			++i;
-		} 
-	}
-	if (counter == 0) {
-		vfprintf(stdout, message, argp);
-		destroy_local_string(&local);
-		return;
-	}
-	// Modify the message string to pass it to fprintf
-	char* num_digits = int_to_string(s->length);
-	size_t length_diff = (s->length > 2) ? (s->length - 2) : (2 - s->length);
-	c_string new = {NULL, local.length + (counter) * (length_diff)};
-	
-	initialize_string(&new, new.length);
-	subs_string(s, &new, positions, counter, message, local.length);
-	// NOTE: A null-terminator is added in this specific case due to strchrnul() returning a pointer to the non-existant null-terminator.
-	// ASK: Would not adding a null-terminator in this case raise a security concern due to having a pointer pointing beyond the allocated memory?
-	vfprintf(stdout, new.string, argp);
-	destroy_local_string(&new);
-	
-	destroy_local_string(&local);
-	free(num_digits);
-}
-
-void print(const c_string* s, const char* message, ...) {
-	va_list argp;
-	va_start(argp, message);
-	actual_print(s, message, argp);
-	va_end(argp);
-}
-
-void scan_string(c_string* s, const char* prompt) {
-	
-}
-
 c_string** string_delim(const c_string* s, const char* delim) {
 	
 	// Count number of delimiter occurence
@@ -232,106 +178,71 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	size_t counter = 0;
 	const size_t delim_size = strlen(delim);
 	if (s->length >= delim_size) {
-		for(size_t i = 0; i <= s->length - delim_size; i++) {
+		for(size_t i = 0; i <= s->length - delim_size;) {
 			if ((memcmp(s->string + i, delim, delim_size) == 0)) {
-				printf("i is %zu.\n", i);
-				i += delim_size - 1;
 				++counter;
+				i += delim_size;
+			}
+			else {
+				i += 1;
 			}
 		}
 	}
 	
 	// Allocate space for the different strings
 	if (counter == 0) {
-		c_string** new_split_string = calloc(1, sizeof(c_string*));
+		c_string** new_split_string = calloc(2, sizeof(c_string*));
 		new_split_string[0] = calloc(1, sizeof(c_string));
-		//new_split_string[1] = calloc(1, sizeof(c_string));
-		c_string* input = new_split_string[0];
-		create_string_from_length(input, s->string, s->length);
-		//create_string_from_length(new_split_string[1], NULL, 0);
-		return new_split_string;	
-	}
-	
-	// Get delimiter positions 
-	size_t positions[counter]; /* VLA: Undefined behavior? */
-	const size_t array_length = counter;
-	
-	// Re-used variable: Watch out for implications of reusage!
-	counter = 0;
-	for(size_t i = 0; i <= s->length - delim_size; i++) {
-		if ((memcmp(s->string + i, delim, delim_size) == 0)) {
-			positions[counter] = i;
-			i += delim_size - 1;
-			++counter;	
-		}
-	}
-	
-	// Determine how many strings there are depending on delimiter positions
-	size_t possible_strings = array_length + 1;
-	size_t jump = 0;
-	if (positions[0] == 0) {
-		--possible_strings;
-		jump = delim_size;
-	}
-	if (positions[array_length - 1] >= s->length - delim_size) {
-		--possible_strings;
-		jump = 0;
-	}
-	c_string** new_split_string = calloc(possible_strings + 1, sizeof(c_string*));
-	for(size_t i = 0; i < possible_strings + 1; i++) {
-		new_split_string[i] = calloc(1, sizeof(c_string));
-	}
-
-	if (possible_strings == 1) {
-		create_string_from_length(new_split_string[0], s->string + jump, s->length - delim_size);
-		create_string_from_length(new_split_string[1], NULL, 0);
-		//free(positions);
+		new_split_string[1] = NULL;
+		create_string_from_length(new_split_string[0], s->string, s->length);
 		return new_split_string;
 	}
-
-	size_t index = 0; /* To navigate the new_split_string array */
-	if (positions[0] != 0) {
-		create_string_from_length(new_split_string[index], s->string, positions[0]);
-		++index;	
-	} 
 	
-	for(size_t i = 0; i <= array_length - 2; i++) {
-		create_string_from_length(new_split_string[index], s->string + positions[i] + delim_size, positions[i + 1] - positions[i] - delim_size);
-		++index;
-	}
+	// Get delimiter positions
+	long long* positions = calloc(counter + 2, sizeof(signed long long));
+	positions[0] = -delim_size;
+	positions[counter + 1] = s->length;
 	
-	if (positions[array_length - 1] != s->length - delim_size) {
-		create_string_from_length(new_split_string[index], s->string + positions[array_length - 1] + delim_size, s->length - positions[array_length - 1] - delim_size);
-		++index;
-	}
-	create_string_from_length(new_split_string[index], NULL, 0);
-	
-	printf("There is(are) %lu delimiter(s).\n", counter);
-	//free(positions);
-	return new_split_string;
-}
-
-void pretty_print(c_string** s) {
-	size_t i = 0;
-	printf("[");
-	while (s[i]->string != NULL) {
-		if (s[i + 1]->string != NULL) {
-			print(s[i], "{}, ");
+	size_t secondCounter = 1;
+	for(size_t i = 0; i <= s->length - delim_size;) {
+		if ((memcmp(s->string + i, delim, delim_size) == 0)) {
+			positions[secondCounter] = i;
+			++secondCounter;
+			i += delim_size;
 		}
 		else {
-			print(s[i], "{}]\n");
+			i += 1;
 		}
-		++i;
 	}
+	
+	c_string** new_split_string = calloc(counter + 2, sizeof(c_string*));
+	for(size_t i = 0; i <= counter; i++) {
+		new_split_string[i] = calloc(1, sizeof(c_string));
+	}
+	// Dummy Node for termination
+	new_split_string[counter + 1] = NULL;
+
+	for(size_t i = 1; i <= counter + 1; i++) {
+		if (positions[i] - positions[i - 1] - delim_size == 0) {
+			new_split_string[i - 1]->string = NULL;
+			new_split_string[i - 1]->length = 0;
+			//printf("Position[i] is: %zu | Position[i - 1] is: %zu | i = %zu\n", positions[i], positions[i - 1], i);
+			continue;
+		}
+		create_string_from_length(new_split_string[i - 1], s->string + positions[i - 1] + delim_size, positions[i] - positions[i - 1] - delim_size);
+	}
+	
+	free(positions);
+	return new_split_string;
 }
 
 void destroy_delim_string(c_string** s) {
 	size_t i = 0;
-	while (s[i]->string != NULL) {
+	while (s[i] != NULL) {
 		destroy_string(s[i]);
 		++i;
 	}
-	destroy_string(s[i]);
+
 	free(s);
 }
 
@@ -380,27 +291,20 @@ c_string* trim_char(const c_string* s, const char c) {
 	return trimmed_string;
 }
 
-static unsigned long get_file_length(FILE *ifp) {
-   unsigned long file_length;
-
-   fseek(ifp, 0, SEEK_END);
-   file_length = ftell(ifp);
-   rewind(ifp);
-	
-   return file_length;
+void print(const c_string* s) {
+	printf("%.*s", s->length, s->string);
 }
 
-c_string* read_from_file(const char* filename) {
-	FILE* fp = fopen(filename, "r");
-	if (!fp) {
-		fputs("Memory allocation failure", stderr);
-		exit(EXIT_FAILURE);
+void print_delim_strings(c_string** s) {
+	size_t i = 0;
+	printf("[");
+	while (s[i + 1] != NULL) {
+		printf("'");
+		print(s[i]);
+		printf("', ");
+		i++;
 	}
-	
-	const unsigned long file_length = get_file_length(fp);
-	c_string* data = initialize_buffer(file_length);
-	fread(data->string, 1, file_length, fp);
-	fclose(fp);
-
-	return data;
+	printf("'");
+	print(s[i]);
+	printf("']");
 }
