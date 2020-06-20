@@ -46,12 +46,6 @@ static unsigned int count_bchop (unsigned int n) {
     return r;
 }
 
-// To be used by stack-allocated c_strings
-void init_local_string(c_string* s) {
-	s->length = 0;
-	s->string = NULL;
-}
-
 void create_string(c_string* s, char* input) {
 	size_t length = strlen(input);
 	s->string = malloc(length);
@@ -79,11 +73,24 @@ void create_string_from_length(c_string* s, char* input, size_t length) {
 	}
 }
 
+c_string* string_new(const c_string* s) {
+	c_string* new_s = calloc(1, sizeof(c_string));
+	new_s->length = s->length;
+	new_s->string = calloc(1, new_s->length);
+	if (!(new_s->string)) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+	memcpy(new_s->string, s->string, new_s->length);
+
+	return new_s;
+}
+
 c_string* initialize_buffer(size_t length) {
 	c_string* data = calloc(1, sizeof(c_string));
 	data->length = length;
 	data->string = malloc(length);
-	if (!data->string) {
+	if (!(data->string)) {
 		fputs("Memory allocation failure", stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -128,7 +135,6 @@ static char* int_to_string(int x) {
 }
 
 c_string** string_delim(const c_string* s, const char* delim) {
-	
 	// Count number of delimiter occurence
 	// TODO: Write or use existing vector implementation to immediately add positions rather than use a separate for-loop
 	size_t counter = 0;
@@ -182,7 +188,6 @@ c_string** string_delim(const c_string* s, const char* delim) {
 		if (positions[i] - positions[i - 1] - delim_size == 0) {
 			new_split_string[i - 1]->string = NULL;
 			new_split_string[i - 1]->length = 0;
-			//printf("Position[i] is: %zu | Position[i - 1] is: %zu | i = %zu\n", positions[i], positions[i - 1], i);
 			continue;
 		}
 		create_string_from_length(new_split_string[i - 1], s->string + positions[i - 1] + delim_size, positions[i] - positions[i - 1] - delim_size);
@@ -196,55 +201,58 @@ void destroy_delim_string(c_string** s) {
 	size_t i = 0;
 	while (s[i] != NULL) {
 		destroy_string(s[i]);
-		++i;
+		i += 1;
 	}
 
 	free(s);
 }
 
 c_string* trim_char(const c_string* s, const char c) {
-	c_string* result_string = initialize_buffer(s->length);
+	size_t copy_position = 0;
+	size_t num_of_occurences = 0;
+	size_t location = 0;
 
-	size_t start = 0, end = 0;
-	size_t result_position = 0;
-	size_t length = 0;
-
-	if (s->string[0] != c) {
-		start = 0;
-	}
-	else {
-		start = 1;
-	}
-
-	for (size_t i = 1; i < s->length; i++) {
-		if (s->string[i] != c) {
-			if (start > end) {
-				end = start - 1;
-			}
-			end++;
+	// Count number of character occurences
+	for (size_t i = 0; i < s->length; i++) {
+		if (s->string[i] == c) {
+			num_of_occurences += 1;
 		}
-		else {
-			if (start <= end) {
-				length += end - start + 1;
-				memcpy(result_string->string + result_position, s->string + start, end - start + 1);
-				result_position += end - start + 1;
-			}
-			start = i + 1;
+	}
+	
+	if (num_of_occurences == 0) {
+		return string_new(s);
+	}
+
+	c_string* result_string = initialize_buffer(s->length - num_of_occurences);
+
+	size_t* positions = calloc(num_of_occurences, sizeof(size_t));
+	for(size_t i = 0; i < s->length; i++) {
+		if (s->string[i] == c) {
+			positions[location] = i;
+			location += 1;
 		}
 	}
 
-	// In case there are no delimiters at the end
-	if (start < s->length) {
-		memcpy(result_string->string + result_position, s->string + start, end - start + 1);
-		length += end - start + 1;
+	if (positions[0] != 0 && (positions[1] - positions[0] != 1)) {
+		memcpy(result_string->string, s->string, positions[0]);
+		copy_position = positions[0];
 	}
 
-	c_string* trimmed_string = malloc(sizeof(c_string));
-	create_string_from_length(trimmed_string, result_string->string, length);
+	for(size_t i = 0; i <= num_of_occurences - 2; i++) {
+		if (positions[i + 1] - positions[i] == 1) {
+			continue;
+		}
 
-	destroy_string(result_string);
+		memcpy(result_string->string + copy_position, s->string + positions[i] + 1, positions[i + 1] - positions[i] - 1);
+		copy_position += positions[i + 1] - positions[i] - 1;
+	}
 
-	return trimmed_string;
+	if (positions[num_of_occurences - 1] != s->length - 1) {
+		memcpy(result_string->string + copy_position, s->string + positions[num_of_occurences - 1] + 1, s->length - positions[num_of_occurences - 1] - 1);
+	}
+
+	free(positions);
+	return result_string;
 }
 
 void print(const c_string* s) {
@@ -255,12 +263,8 @@ void print_delim_strings(c_string** s) {
 	size_t i = 0;
 	printf("[");
 	while (s[i + 1] != NULL) {
-		printf("'");
-		print(s[i]);
-		printf("', ");
+		printf("'"); print(s[i]); printf("', ");
 		i++;
 	}
-	printf("'");
-	print(s[i]);
-	printf("']");
+	printf("'"); print(s[i]); printf("']");
 }

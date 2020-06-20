@@ -23,9 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <string.h>
-#include <stdarg.h>
 
 // ANSI Escape Codes for colours
 #define ANSI_COLOR_RED     "\x1b[31m"
