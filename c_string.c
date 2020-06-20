@@ -41,7 +41,7 @@ static unsigned int count_bchop (unsigned int n) {
         n /= 100;
     }
     if (n >= 10)
-        r++;
+        r += 1;
 
     return r;
 }
@@ -61,8 +61,8 @@ void create_string_from_length(c_string* s, char* input, size_t length) {
 	if (input != NULL) {
 		s->string = malloc(length);
 		if (!s->string) {
-		fputs("Memory allocation failure", stderr);
-		exit(EXIT_FAILURE);
+			fputs("Memory allocation failure", stderr);
+			exit(EXIT_FAILURE);
 	}
 		s->length = length;
 		memcpy(s->string, input, s->length);
@@ -110,13 +110,6 @@ void string_concat(c_string* s, const char* input) {
 	s->length += strlen(input);
 }
 
-int string_copy(c_string* dest, const c_string* src) {
-	dest = calloc(1, sizeof(c_string));
-	create_string_from_length(dest, src->string, src->length);
-
-	return 0;
-}
-
 void string_modify(c_string* s, const char* input) {
 	size_t length = strlen(input);
 	char* temp = realloc(s->string, length);
@@ -130,6 +123,10 @@ void string_modify(c_string* s, const char* input) {
 static char* int_to_string(int x) {
 	int length = snprintf( NULL, 0, "%d", x );
 	char* str = malloc(length + 1);
+	if (!str) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	snprintf( str, length + 1, "%d", x );
 	return str;
 }
@@ -142,7 +139,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	if (s->length >= delim_size) {
 		for(size_t i = 0; i <= s->length - delim_size;) {
 			if ((memcmp(s->string + i, delim, delim_size) == 0)) {
-				++counter;
+				counter += 1;
 				i += delim_size;
 			}
 			else {
@@ -161,7 +158,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	}
 	
 	// Get delimiter positions
-	long long* positions = calloc(counter + 2, sizeof(signed long long));
+	long long* positions = calloc(counter + 2, sizeof(long long));
 	positions[0] = -delim_size;
 	positions[counter + 1] = s->length;
 	
@@ -169,7 +166,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	for(size_t i = 0; i <= s->length - delim_size;) {
 		if ((memcmp(s->string + i, delim, delim_size) == 0)) {
 			positions[secondCounter] = i;
-			++secondCounter;
+			secondCounter += 1;
 			i += delim_size;
 		}
 		else {
@@ -181,7 +178,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	for(size_t i = 0; i <= counter; i++) {
 		new_split_string[i] = calloc(1, sizeof(c_string));
 	}
-	// Dummy Node for termination
+	// Dummy Node for termination when printing
 	new_split_string[counter + 1] = NULL;
 
 	for(size_t i = 1; i <= counter + 1; i++) {
@@ -264,7 +261,7 @@ void print_delim_strings(c_string** s) {
 	printf("[");
 	while (s[i + 1] != NULL) {
 		printf("'"); print(s[i]); printf("', ");
-		i++;
+		i += 1;
 	}
 	printf("'"); print(s[i]); printf("']");
 }

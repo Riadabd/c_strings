@@ -59,7 +59,6 @@ void destroy_delim_string(c_string** s);
 /* Concatenate input into string s */
 void string_concat(c_string* s, const char* input);
 void string_modify(c_string* s, const char* input);
-int string_copy(c_string* dest, const c_string* src);
 
 void print(const c_string* s);
 void print_delim_strings(c_string** s);
