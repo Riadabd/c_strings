@@ -46,6 +46,42 @@ static unsigned int count_bchop (unsigned int n) {
     return r;
 }
 
+// Convert integer value to char*
+static char* itoa_c(int value, char* result, int base) {
+    // check that the base if valid
+    if (base < 2 || base > 36) { result = NULL; return result; }
+
+    char* ptr = result, *ptr1 = result, tmp_char;
+    int tmp_value;
+
+    do {
+        tmp_value = value;
+        value /= base;
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
+    } while (value);
+
+    // Apply negative sign
+    if (tmp_value < 0) *ptr++ = '-';
+    //*ptr-- = '\0';
+    ptr--;
+    while(ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr--= *ptr1;
+        *ptr1++ = tmp_char;
+    }
+    return result;
+}
+
+c_string* int_to_string(int x) {
+	int length = snprintf(NULL, 0, "%d", x);
+	char* s = malloc(length);
+	s = itoa_c(x, s, 10);
+
+	c_string* result = string_from_char(s, length);
+	free(s);
+	return result;
+}
+
 void create_string(c_string* s, char* input) {
 	size_t length = strlen(input);
 	s->string = malloc(length);
@@ -86,6 +122,19 @@ c_string* string_new(const c_string* s) {
 	return new_s;
 }
 
+c_string* string_from_char(const char* s, const int length) {
+	c_string* new_s = calloc(1, sizeof(c_string));
+	new_s->length = length;
+	new_s->string = calloc(1, new_s->length);
+	if (!(new_s->string)) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+	memcpy(new_s->string, s, new_s->length);
+
+	return new_s;
+}
+
 c_string* initialize_buffer(size_t length) {
 	c_string* data = calloc(1, sizeof(c_string));
 	data->length = length;
@@ -118,17 +167,6 @@ void string_modify(c_string* s, const char* input) {
 		s->length = length;
 		memcpy(s->string, input, length);
 	}
-}
-
-static char* int_to_string(int x) {
-	int length = snprintf( NULL, 0, "%d", x );
-	char* str = malloc(length + 1);
-	if (!str) {
-		fputs("Memory allocation failure", stderr);
-		exit(EXIT_FAILURE);
-	}
-	snprintf( str, length + 1, "%d", x );
-	return str;
 }
 
 c_string** string_delim(const c_string* s, const char* delim) {
