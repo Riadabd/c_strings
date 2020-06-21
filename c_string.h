@@ -50,6 +50,9 @@ void create_string(c_string* s, char* input);
 void create_string_from_length(c_string* s, char* input, size_t length);
 /* Initialize string buffer */
 c_string* initialize_buffer(size_t length);
+/* Copy contents of a c_string into a new one ("Copy Constructor") */
+c_string* string_new(const c_string* s);
+c_string* string_from_char(const char* s, const int length);
 
 /* Free the string's content and the string itself */
 void destroy_string(c_string* input);
@@ -69,3 +72,7 @@ void scan_string(c_string* s, const char* prompt);
 /* Split string according to given delimiter */
 c_string** string_delim(const c_string* s, const char* delim);
 c_string* trim_char(const c_string* s, const char c);
+
+c_string* int_to_string(int x);
+// TODO
+c_string* float_to_string(float x);
