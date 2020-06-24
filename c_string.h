@@ -63,6 +63,13 @@ void destroy_delim_string(c_string** s);
 void string_concat(c_string* s, const char* input);
 void string_modify(c_string* s, const char* input);
 
+/* Check if two strings are equal
+   Longer string is considered greater
+   Return > 0 if first is greater than second
+   Return 0 if they are equal
+   Return < 0 if second is greater than first */
+int string_compare(const c_string* first, const c_string* second);
+
 void print(const c_string* s);
 void print_delim_strings(c_string** s);
 

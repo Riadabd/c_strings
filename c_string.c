@@ -149,7 +149,6 @@ c_string* initialize_buffer(size_t length) {
 void destroy_string(c_string* input) {
 	free(input->string);
 	free(input);
-	// ASK: Is it good practice to set to NULL after freeing?
 }
 
 void string_concat(c_string* s, const char* input) {
@@ -169,9 +168,19 @@ void string_modify(c_string* s, const char* input) {
 	}
 }
 
+int string_compare(const c_string* first, const c_string* second) {
+	if (first->length > second->length) {
+		return 1;
+	}
+	else if (first->length < second->length) {
+		return -1;
+	}
+
+	return memcmp(first->string, second->string, first->length);
+}
+
 c_string** string_delim(const c_string* s, const char* delim) {
 	// Count number of delimiter occurence
-	// TODO: Write or use existing vector implementation to immediately add positions rather than use a separate for-loop
 	size_t counter = 0;
 	const size_t delim_size = strlen(delim);
 	if (s->length >= delim_size) {
