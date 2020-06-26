@@ -157,6 +157,14 @@ c_string* subString(c_string* s, size_t start, size_t end) {
 	return result;
 }
 
+char* get_null_terminated_string(c_string* s) {
+	char* result = malloc(s->length + 1);
+	result[s->length] = '\0';
+	memcpy(result, s->string, s->length);
+
+	return result;
+}
+
 void destroy_string(c_string* input) {
 	free(input->string);
 	free(input);

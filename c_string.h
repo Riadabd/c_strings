@@ -55,6 +55,8 @@ c_string* string_new(const c_string* s);
 c_string* string_from_char(const char* s, const int length);
 // Start and End are inclusive bounds
 c_string* subString(c_string* s, size_t start, size_t end);
+// Return string inside c_string with a null-terminator in case an external function requires it
+char* get_null_terminated_string(c_string* s);
 
 /* Free the string's content and the string itself */
 void destroy_string(c_string* input);
