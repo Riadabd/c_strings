@@ -143,7 +143,18 @@ c_string* initialize_buffer(size_t length) {
 		fputs("Memory allocation failure", stderr);
 		exit(EXIT_FAILURE);
 	}
+
 	return data;
+}
+
+c_string* subString(c_string* s, size_t start, size_t end) {
+	size_t length = end - start + 1;
+	c_string* result = calloc(1, sizeof(c_string));
+	result->length = length;
+	result->string = malloc(length);
+	memcpy(result->string, s->string + start, length);
+
+	return result;
 }
 
 void destroy_string(c_string* input) {

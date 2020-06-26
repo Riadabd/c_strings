@@ -53,6 +53,8 @@ c_string* initialize_buffer(size_t length);
 /* Copy contents of a c_string into a new one ("Copy Constructor") */
 c_string* string_new(const c_string* s);
 c_string* string_from_char(const char* s, const int length);
+// Start and End are inclusive bounds
+c_string* subString(c_string* s, size_t start, size_t end);
 
 /* Free the string's content and the string itself */
 void destroy_string(c_string* input);
@@ -81,5 +83,5 @@ c_string** string_delim(const c_string* s, const char* delim);
 c_string* trim_char(const c_string* s, const char c);
 
 c_string* int_to_string(int x);
-// TODO
+// TODO: Check resources on how this can be implemented
 c_string* float_to_string(float x);
