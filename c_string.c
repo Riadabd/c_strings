@@ -162,7 +162,12 @@ c_string* initialize_buffer(size_t length) {
 	return data;
 }
 
-c_string* subString(c_string* s, size_t start, size_t end) {
+c_string* sub_string(c_string* s, size_t start, size_t end) {
+	if ((start < 0) || (start > s->length - 1) || (end < 0) || (end > s->length - 1)) {
+		fputs("Start or End bounds are invalid", stderr);
+		return NULL;
+	}
+
 	size_t length = end - start + 1;
 	c_string* result = calloc(1, sizeof(c_string));
 	result->length = length;
