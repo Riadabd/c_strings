@@ -26,7 +26,7 @@
 #include "c_string.h"
 
 // Count number of digits
-static unsigned int count_bchop (unsigned int n) {
+static unsigned int count_bchop(unsigned int n) {
     int r = 1;
     if (n >= 100000000) {
         r += 8;
@@ -49,7 +49,10 @@ static unsigned int count_bchop (unsigned int n) {
 // Convert integer value to char*
 static char* itoa_c(int value, char* result, int base) {
     // check that the base if valid
-    if (base < 2 || base > 36) { result = NULL; return result; }
+    if (base < 2 || base > 36) {
+    	result = NULL;
+    	return result;
+    }
 
     char* ptr = result, *ptr1 = result, tmp_char;
     int tmp_value;
@@ -81,6 +84,18 @@ c_string* int_to_string(int x) {
 	free(s);
 	return result;
 }
+
+c_string* float_to_string(float x) {
+	int len = snprintf(NULL, 0, "%g", x);
+	char* s = (char*) malloc(len + 1);
+	snprintf(s, len + 1, "%g", x);	
+
+	c_string* result = calloc(1, sizeof(c_string));
+	create_string(result, s);
+	free(s);
+
+	return result;
+} 
 
 void create_string(c_string* s, char* input) {
 	size_t length = strlen(input);
