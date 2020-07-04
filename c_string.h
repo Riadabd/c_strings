@@ -32,6 +32,7 @@
 #define ANSI_COLOR_BLUE    "\x1b[34m"
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_WHITE   "\x1B[37m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 enum {
@@ -76,6 +77,8 @@ int string_compare(const c_string* first, const c_string* second);
 
 void print(const c_string* s);
 void print_delim_strings(c_string** s);
+// Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
+void print_colored(const c_string* s, const char* color);
 
 /* Read stdin input into c_string */
 void scan_string(c_string* s, const char* prompt);
