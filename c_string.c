@@ -300,14 +300,6 @@ c_string** string_delim(const c_string* s, const char* delim) {
 		exit(EXIT_FAILURE);
 	}
 
-	/* for(size_t i = 0; i <= counter; i++) {
-		new_split_string[i] = calloc(1, sizeof(c_string));
-		if (!new_split_string[i]) {
-			fputs("Memory allocation failure", stderr);
-			exit(EXIT_FAILURE);
-		}
-	} */
-
 	// Dummy Node for termination when printing
 	new_split_string[counter + 1] = NULL;
 
