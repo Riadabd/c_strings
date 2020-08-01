@@ -47,8 +47,6 @@ typedef struct {
 
 /* Create string from an input */
 void create_string(c_string* s, char* input);
-/* Create string given the length of the input if the input is not null-terminated */
-void create_string_from_length(c_string* s, char* input, size_t length);
 /* Initialize string buffer */
 c_string* initialize_buffer(size_t length);
 /* Copy contents of a c_string into a new one ("Copy Constructor") */
