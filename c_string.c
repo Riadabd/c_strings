@@ -416,3 +416,12 @@ void print_colored(const c_string* s, const char* color) {
 		printf(ANSI_COLOR_WHITE "%.*s" ANSI_COLOR_RESET, s->length, s->string);
 	}
 }
+
+size_t get_delim_string_length(c_string** s) {
+	size_t i = 0;
+	while (s[i + 1] != NULL) {
+		i += 1;
+	}
+
+	return i;
+}

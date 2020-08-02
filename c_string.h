@@ -78,6 +78,8 @@ void print_delim_strings(c_string** s);
 // Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
 void print_colored(const c_string* s, const char* color);
 
+size_t get_delim_string_length(c_string** s);
+
 /* Read stdin input into c_string */
 void scan_string(c_string* s, const char* prompt);
 
