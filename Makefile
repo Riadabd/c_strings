@@ -1,8 +1,8 @@
 clang_win:
-	clang -Wall -g -fsanitize=undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o clang_win_test.exe
+	clang -Weverything -g -fsanitize=undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o clang_win_test.exe
 
 clang_linux:
-	clang -Wall -g -fsanitize=address,undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o clang_linux_test
+	clang -Weverything -g -fsanitize=address,undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o clang_linux_test
 
 gcc_win:
 	gcc -Wall -Wextra -g -fno-omit-frame-pointer -march=native c_string.c main.c -o gcc_win_test.exe
