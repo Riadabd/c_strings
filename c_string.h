@@ -47,8 +47,6 @@ typedef struct {
 
 /* Create string from an input */
 void create_string(c_string* s, char* input);
-/* Create string given the length of the input if the input is not null-terminated */
-void create_string_from_length(c_string* s, char* input, size_t length);
 /* Initialize string buffer */
 c_string* initialize_buffer(size_t length);
 /* Copy contents of a c_string into a new one ("Copy Constructor") */
@@ -79,6 +77,8 @@ void print(const c_string* s);
 void print_delim_strings(c_string** s);
 // Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
 void print_colored(const c_string* s, const char* color);
+
+size_t get_delim_string_length(c_string** s);
 
 /* Read stdin input into c_string */
 void scan_string(c_string* s, const char* prompt);

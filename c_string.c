@@ -18,8 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  * 
- * clang -O1 -g -fsanitize=undefined -fno-omit-frame-pointer c_string.c main.c -o test
- * gcc -Wall -Wextra c_string.c main.c -o test
  * 
  */
 
@@ -78,6 +76,10 @@ static char* itoa_c(int value, char* result, int base) {
 c_string* int_to_string(int x) {
 	int length = snprintf(NULL, 0, "%d", x);
 	char* s = malloc(length);
+	if (!s) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	s = itoa_c(x, s, 10);
 
 	c_string* result = string_from_char(s, length);
@@ -88,9 +90,17 @@ c_string* int_to_string(int x) {
 c_string* float_to_string(double x) {
 	int len = snprintf(NULL, 0, "%g", x);
 	char* s = (char*) malloc(len + 1);
+	if (!s) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	snprintf(s, len + 1, "%g", x);	
 
 	c_string* result = calloc(1, sizeof(c_string));
+	if (!result) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	create_string(result, s);
 	free(s);
 
@@ -100,7 +110,7 @@ c_string* float_to_string(double x) {
 void create_string(c_string* s, char* input) {
 	size_t length = strlen(input);
 	s->string = malloc(length);
-	if (!s->string) {
+	if (!(s->string)) {
 		fputs("Memory allocation failure", stderr);
 		exit(EXIT_FAILURE);
 	}
@@ -108,24 +118,13 @@ void create_string(c_string* s, char* input) {
 	memcpy(s->string, input, s->length);
 }
 
-void create_string_from_length(c_string* s, char* input, size_t length) {
-	if (input != NULL) {
-		s->string = malloc(length);
-		if (!s->string) {
-			fputs("Memory allocation failure", stderr);
-			exit(EXIT_FAILURE);
-	}
-		s->length = length;
-		memcpy(s->string, input, s->length);
-	}
-	else {
-		s->string = NULL;
-		s->length = 0;
-	}
-}
-
 c_string* string_new(const c_string* s) {
 	c_string* new_s = calloc(1, sizeof(c_string));
+	if (!new_s) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	new_s->length = s->length;
 	new_s->string = calloc(1, new_s->length);
 	if (!(new_s->string)) {
@@ -139,6 +138,17 @@ c_string* string_new(const c_string* s) {
 
 c_string* string_from_char(const char* s, const int length) {
 	c_string* new_s = calloc(1, sizeof(c_string));
+	if (!new_s) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
+	if (length == 0) {
+		new_s->string = NULL;
+		new_s->length = 0;
+		return new_s;
+	}
+
 	new_s->length = length;
 	new_s->string = calloc(1, new_s->length);
 	if (!(new_s->string)) {
@@ -152,6 +162,10 @@ c_string* string_from_char(const char* s, const int length) {
 
 c_string* initialize_buffer(size_t length) {
 	c_string* data = calloc(1, sizeof(c_string));
+	if (!data) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	data->length = length;
 	data->string = malloc(length);
 	if (!(data->string)) {
@@ -163,15 +177,24 @@ c_string* initialize_buffer(size_t length) {
 }
 
 c_string* sub_string(c_string* s, size_t start, size_t end) {
-	if ((start < 0) || (start > s->length - 1) || (end < 0) || (end > s->length - 1)) {
+	if ((start > s->length - 1) || (end > s->length - 1)) {
 		fputs("Start or End bounds are invalid", stderr);
 		return NULL;
 	}
 
 	size_t length = end - start + 1;
 	c_string* result = calloc(1, sizeof(c_string));
+	if (!result) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
 	result->length = length;
 	result->string = malloc(length);
+	if (!(result->string)) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	memcpy(result->string, s->string + start, length);
 
 	return result;
@@ -179,20 +202,25 @@ c_string* sub_string(c_string* s, size_t start, size_t end) {
 
 char* get_null_terminated_string(c_string* s) {
 	char* result = malloc(s->length + 1);
+	if (!result) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	result[s->length] = '\0';
 	memcpy(result, s->string, s->length);
 
 	return result;
 }
 
-void destroy_string(c_string* input) {
-	free(input->string);
-	free(input);
-}
-
 void string_concat(c_string* s, const char* input) {
 	// TODO: Check how to handle possible allocation size overflow
 	s->string = realloc(s->string, s->length + strlen(input));
+	if (!(s->string)) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	memcpy(s->string + s->length, input, strlen(input));
 	s->length += strlen(input);
 }
@@ -210,8 +238,7 @@ void string_modify(c_string* s, const char* input) {
 int string_compare(const c_string* first, const c_string* second) {
 	if (first->length > second->length) {
 		return 1;
-	}
-	else if (first->length < second->length) {
+	} else if (first->length < second->length) {
 		return -1;
 	}
 
@@ -227,8 +254,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 			if ((memcmp(s->string + i, delim, delim_size) == 0)) {
 				counter += 1;
 				i += delim_size;
-			}
-			else {
+			} else {
 				i += 1;
 			}
 		}
@@ -237,14 +263,23 @@ c_string** string_delim(const c_string* s, const char* delim) {
 	// Allocate space for the different strings
 	if (counter == 0) {
 		c_string** new_split_string = calloc(2, sizeof(c_string*));
-		new_split_string[0] = calloc(1, sizeof(c_string));
+		if (!new_split_string) {
+			fputs("Memory allocation failure", stderr);
+			exit(EXIT_FAILURE);
+		}
+
+		new_split_string[0] = string_from_char(s->string, s->length);
 		new_split_string[1] = NULL;
-		create_string_from_length(new_split_string[0], s->string, s->length);
 		return new_split_string;
 	}
 	
 	// Get delimiter positions
 	long long* positions = calloc(counter + 2, sizeof(long long));
+	if (!positions) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	positions[0] = -delim_size;
 	positions[counter + 1] = s->length;
 	
@@ -254,30 +289,37 @@ c_string** string_delim(const c_string* s, const char* delim) {
 			positions[secondCounter] = i;
 			secondCounter += 1;
 			i += delim_size;
-		}
-		else {
+		} else {
 			i += 1;
 		}
 	}
 	
 	c_string** new_split_string = calloc(counter + 2, sizeof(c_string*));
-	for(size_t i = 0; i <= counter; i++) {
-		new_split_string[i] = calloc(1, sizeof(c_string));
+	if (!new_split_string) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
 	}
+
 	// Dummy Node for termination when printing
 	new_split_string[counter + 1] = NULL;
 
 	for(size_t i = 1; i <= counter + 1; i++) {
+		new_split_string[i - 1] = string_from_char(s->string + positions[i - 1] + delim_size, positions[i] - positions[i - 1] - delim_size);
+
 		if (positions[i] - positions[i - 1] - delim_size == 0) {
 			new_split_string[i - 1]->string = NULL;
 			new_split_string[i - 1]->length = 0;
 			continue;
 		}
-		create_string_from_length(new_split_string[i - 1], s->string + positions[i - 1] + delim_size, positions[i] - positions[i - 1] - delim_size);
 	}
 	
 	free(positions);
 	return new_split_string;
+}
+
+void destroy_string(c_string* input) {
+	free(input->string);
+	free(input);
 }
 
 void destroy_delim_string(c_string** s) {
@@ -309,6 +351,11 @@ c_string* trim_char(const c_string* s, const char c) {
 	c_string* result_string = initialize_buffer(s->length - num_of_occurences);
 
 	size_t* positions = calloc(num_of_occurences, sizeof(size_t));
+	if (!positions) {
+		fputs("Memory allocation failure", stderr);
+		exit(EXIT_FAILURE);
+	}
+
 	for(size_t i = 0; i < s->length; i++) {
 		if (s->string[i] == c) {
 			positions[location] = i;
@@ -359,23 +406,26 @@ void print_delim_strings(c_string** s) {
 void print_colored(const c_string* s, const char* color) {
 	if ((strcmp(color, "red") == 0) || (strcmp(color, "Red")) == 0) {
 		printf(ANSI_COLOR_RED "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "green") == 0) || (strcmp(color, "Green")) == 0) {
+	} else if ((strcmp(color, "green") == 0) || (strcmp(color, "Green")) == 0) {
 		printf(ANSI_COLOR_GREEN "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "yellow") == 0) || (strcmp(color, "Yellow")) == 0) {
+	} else if ((strcmp(color, "yellow") == 0) || (strcmp(color, "Yellow")) == 0) {
 		printf(ANSI_COLOR_YELLOW "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "blue") == 0) || (strcmp(color, "Blue")) == 0) {
+	} else if ((strcmp(color, "blue") == 0) || (strcmp(color, "Blue")) == 0) {
 		printf(ANSI_COLOR_BLUE "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "magenta") == 0) || (strcmp(color, "Magenta")) == 0) {
+	} else if ((strcmp(color, "magenta") == 0) || (strcmp(color, "Magenta")) == 0) {
 		printf(ANSI_COLOR_MAGENTA "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "cyan") == 0) || (strcmp(color, "Cyan")) == 0) {
+	} else if ((strcmp(color, "cyan") == 0) || (strcmp(color, "Cyan")) == 0) {
 		printf(ANSI_COLOR_CYAN "%.*s" ANSI_COLOR_RESET, s->length, s->string);
-	}
-	else if ((strcmp(color, "white") == 0) || (strcmp(color, "White")) == 0) {
+	} else if ((strcmp(color, "white") == 0) || (strcmp(color, "White")) == 0) {
 		printf(ANSI_COLOR_WHITE "%.*s" ANSI_COLOR_RESET, s->length, s->string);
 	}
+}
+
+size_t get_delim_string_length(c_string** s) {
+	size_t i = 0;
+	while (s[i + 1] != NULL) {
+		i += 1;
+	}
+
+	return i;
 }
