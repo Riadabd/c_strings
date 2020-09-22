@@ -85,7 +85,7 @@ c_string* int_to_string(int x) {
 	return result;
 }
 
-c_string* float_to_string(float x) {
+c_string* float_to_string(double x) {
 	int len = snprintf(NULL, 0, "%g", x);
 	char* s = (char*) malloc(len + 1);
 	snprintf(s, len + 1, "%g", x);	
@@ -336,6 +336,10 @@ c_string* trim_char(const c_string* s, const char c) {
 
 	free(positions);
 	return result_string;
+}
+
+c_string* to_lower(const c_string* s) {
+	
 }
 
 void print(const c_string* s) {

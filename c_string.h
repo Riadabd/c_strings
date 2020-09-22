@@ -87,6 +87,8 @@ void scan_string(c_string* s, const char* prompt);
 c_string** string_delim(const c_string* s, const char* delim);
 c_string* trim_char(const c_string* s, const char c);
 
+c_string* to_lower(const c_string* s);
+
 c_string* int_to_string(int x);
 // TODO: Check resources on how this can be implemented
-c_string* float_to_string(float x);
+c_string* float_to_string(double x);
