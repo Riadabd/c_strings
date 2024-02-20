@@ -28,7 +28,7 @@ static unsigned int count_bchop(unsigned int n) {
 
 // Convert integer value to char*
 static char* itoa_c(int value, char* result, int base) {
-  // check that the base if valid
+  // Check if the base is valid
   if (base < 2 || base > 36) {
     result = NULL;
     return result;
