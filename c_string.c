@@ -160,8 +160,13 @@ c_string* initialize_buffer(size_t length) {
 }
 
 c_string* sub_string(c_string* s, size_t start, size_t end) {
-  if ((start > s->length - 1) || (end > s->length - 1)) {
-    fputs("Start or End bounds are invalid", stderr);
+  if ((start > s->length - 1) || (start < 0) || (end > s->length - 1) || (end < 0)) {
+    fputs("Start or end indices are invalid", stderr);
+    return NULL;
+  }
+
+  if (start > end) {
+    fputs("Start index cannot be greater than the end index", stderr);
     return NULL;
   }
 
