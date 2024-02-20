@@ -3,23 +3,23 @@
 #include <string.h>
 
 // ANSI Escape Codes for colours
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
-#define ANSI_COLOR_WHITE   "\x1B[37m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED      "\x1b[31m"
+#define ANSI_COLOR_GREEN    "\x1b[32m"
+#define ANSI_COLOR_YELLOW   "\x1b[33m"
+#define ANSI_COLOR_BLUE     "\x1b[34m"
+#define ANSI_COLOR_MAGENTA  "\x1b[35m"
+#define ANSI_COLOR_CYAN     "\x1b[36m"
+#define ANSI_COLOR_WHITE    "\x1B[37m"
+#define ANSI_COLOR_RESET    "\x1b[0m"
 
 enum {
-	COPY_ERROR,
-	OUT_OF_MEMORY
+  COPY_ERROR,
+  OUT_OF_MEMORY
 };
 
 typedef struct {
-	char* string;
-	size_t length;
+  char* string;
+  size_t length;
 } c_string;
 
 /* Create string from an input */
