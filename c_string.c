@@ -84,19 +84,13 @@ c_string* float_to_string(double x) {
     fputs("Memory allocation failure", stderr);
     exit(EXIT_FAILURE);
   }
-  create_string(result, s);
+  create_string(result, len, s);
   free(s);
 
   return result;
-} 
+}
 
-void create_string(c_string* s, char* input) {
-  size_t length = strlen(input);
-  s->string = malloc(length);
-  if (!(s->string)) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
-  }
+void create_string(c_string* s, size_t length, char* input) {
   s->length = length;
   memcpy(s->string, input, s->length);
 }
@@ -176,6 +170,7 @@ c_string* sub_string(c_string* s, size_t start, size_t end) {
     fputs("Memory allocation failure", stderr);
     exit(EXIT_FAILURE);
   }
+
   result->length = length;
   result->string = malloc(length);
   if (!(result->string)) {

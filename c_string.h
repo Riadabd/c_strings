@@ -23,7 +23,7 @@ typedef struct {
 } c_string;
 
 /* Create string from an input */
-void create_string(c_string* s, char* input);
+void create_string(c_string* s, size_t out_length, char* input);
 /* Initialize string buffer */
 c_string* initialize_buffer(size_t length);
 /* Copy contents of a c_string into a new one ("Copy Constructor") */

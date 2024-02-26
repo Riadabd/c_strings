@@ -4,7 +4,13 @@
 int main(void) {
   c_string* s = malloc(sizeof(c_string));
   //create_string(s, "---&ABC---League-Hello");
-  create_string(s, "---&ABC-----0321849325---a-a-a-a-x--");
+
+  // char* string = "---&ABC-----0321849325---a-a-a-a-x--";
+  char* string = "ABB--CAW";
+  size_t length = strlen(string);
+  s->string = calloc(length, sizeof(char));
+  create_string(s, length, string);
+
   //create_string(s, "ABB--CAW");
   
   c_string** result = string_delim(s, "--");
