@@ -6,3 +6,9 @@ c_strings provides `create_string(c_string*, char*)` and `get_null_terminated_st
 
 # Example Usage
 TODO
+
+# Potential Improvements
+
+- [] Add UTF-8 support
+- [] Fuzz the codebase
+- [] Experiment with arenas (this will help avoid `malloc`, `calloc` and `free` calls for every single (de-)allocation)
