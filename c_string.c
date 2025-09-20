@@ -366,9 +366,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 }
 
 c_string* trim_char(const c_string* s, const char c) {
-  size_t copy_position = 0;
   size_t num_of_occurences = 0;
-  size_t location = 0;
 
   // Count number of character occurences
   for (size_t i = 0; i < s->length; i++) {
@@ -377,44 +375,44 @@ c_string* trim_char(const c_string* s, const char c) {
     }
   }
 
+  // If the input string does not contain the target character, return a copy of the
+  // input string.
   if (num_of_occurences == 0) {
     return string_new(s);
   }
 
+  // If the input string is the target character itself, return an empty buffer.
+  if (s->length - num_of_occurences == 0) {
+    return initialize_buffer(0);
+  }
+
   c_string* result_string = initialize_buffer(s->length - num_of_occurences);
 
-  size_t* positions = calloc(num_of_occurences, sizeof(size_t));
-  if (!positions) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
-  }
-
-  for(size_t i = 0; i < s->length; i++) {
+  size_t last_location = 0;
+  size_t copy_position = 0;
+  for (size_t i = 0; i < s->length; i++) {
     if (s->string[i] == c) {
-      positions[location] = i;
-      location += 1;
+      if (i - last_location > 0) {
+        memcpy(result_string->string + copy_position, s->string + last_location, i - last_location);
+        copy_position += i - last_location;
+      }
+
+      // We increment last_location even if current index is at the same location as the last_location index.
+      // Otherwise, we risk:
+      //   * a case where the target char is at index 0, and we end up copying the full input string
+      // instead of just copying (input string length - 1).
+      //   * a case where the target char happens at consecutive indices, and last_location ends up falling behind.
+      last_location = i + 1;
     }
   }
 
-  if (positions[0] != 0 && (positions[1] - positions[0] != 1)) {
-    memcpy(result_string->string, s->string, positions[0]);
-    copy_position = positions[0];
+  if (last_location >= s->length) {
+    return result_string;
   }
 
-  for(size_t i = 0; i <= num_of_occurences - 2; i++) {
-    if (positions[i + 1] - positions[i] == 1) {
-      continue;
-    }
+  // Perform final memcpy between final_position and s->length indices
+  memcpy(result_string->string + copy_position, s->string + last_location, s->length - last_location);
 
-    memcpy(result_string->string + copy_position, s->string + positions[i] + 1, positions[i + 1] - positions[i] - 1);
-    copy_position += positions[i + 1] - positions[i] - 1;
-  }
-
-  if (positions[num_of_occurences - 1] != s->length - 1) {
-    memcpy(result_string->string + copy_position, s->string + positions[num_of_occurences - 1] + 1, s->length - positions[num_of_occurences - 1] - 1);
-  }
-
-  free(positions);
   return result_string;
 }
 

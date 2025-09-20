@@ -36,14 +36,41 @@ void test_trim_char_returns_copy_when_character_missing(void) {
   destroy_string(input);
 }
 
-void test_trim_char_single_match_known_bug(void) {
+void test_trim_char_single_match(void) {
   c_string* input = make_string("abc");
-  TEST_IGNORE_MESSAGE("Known bug: trim_char fails when the target character appears once.");
 
   c_string* trimmed = trim_char(input, 'b');
   TEST_ASSERT_NOT_NULL(trimmed);
   TEST_ASSERT_EQUAL_size_t(2, trimmed->length);
   TEST_ASSERT_EQUAL_MEMORY("ac", trimmed->string, trimmed->length);
+
+  destroy_string(trimmed);
+  destroy_string(input);
+}
+
+void test_trim_char_leading_match_known_bug(void) {
+  // TEST_IGNORE_MESSAGE("Known bug: trim_char leaves leading trimmed characters in the output.");
+
+  c_string* input = make_string("-abc");
+  c_string* trimmed = trim_char(input, '-');
+
+  TEST_ASSERT_NOT_NULL(trimmed);
+  TEST_ASSERT_EQUAL_size_t(3, trimmed->length);
+  TEST_ASSERT_EQUAL_MEMORY("abc", trimmed->string, trimmed->length);
+
+  destroy_string(trimmed);
+  destroy_string(input);
+}
+
+void test_trim_char_collapsed_runs_known_bug(void) {
+  // TEST_IGNORE_MESSAGE("Known bug: trim_char mishandles consecutive target characters.");
+
+  c_string* input = make_string("a--b");
+  c_string* trimmed = trim_char(input, '-');
+
+  TEST_ASSERT_NOT_NULL(trimmed);
+  TEST_ASSERT_EQUAL_size_t(2, trimmed->length);
+  TEST_ASSERT_EQUAL_MEMORY("ab", trimmed->string, trimmed->length);
 
   destroy_string(trimmed);
   destroy_string(input);
