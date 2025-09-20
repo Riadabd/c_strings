@@ -48,9 +48,7 @@ void test_trim_char_single_match(void) {
   destroy_string(input);
 }
 
-void test_trim_char_leading_match_known_bug(void) {
-  // TEST_IGNORE_MESSAGE("Known bug: trim_char leaves leading trimmed characters in the output.");
-
+void test_trim_char_leading_match(void) {
   c_string* input = make_string("-abc");
   c_string* trimmed = trim_char(input, '-');
 
@@ -62,9 +60,7 @@ void test_trim_char_leading_match_known_bug(void) {
   destroy_string(input);
 }
 
-void test_trim_char_collapsed_runs_known_bug(void) {
-  // TEST_IGNORE_MESSAGE("Known bug: trim_char mishandles consecutive target characters.");
-
+void test_trim_char_collapsed_runs(void) {
   c_string* input = make_string("a--b");
   c_string* trimmed = trim_char(input, '-');
 
