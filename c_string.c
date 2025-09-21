@@ -292,15 +292,21 @@ void scan_string(c_string* s, const char* prompt);
 
 /* String Transformation Functions */
 
-// Split string according to given delimiter
+// Split string according to given delimiter.
+//  * If delimiter size > input size, we consider that the delimiter was not found
+//  and return the original input.
+//  * If delimiter is exactly the input string, we return ['', ''] since we have nothing "before"
+//  and "after" the delimiter match.
 c_string** string_delim(const c_string* s, const char* delim) {
-  // Count number of delimiter occurence
-  size_t counter = 0;
+  // Count number of delimiter occurences.
+  // We start the count at 1 since no match = returning the original string.
+  size_t delim_counter = 1;
   const size_t delim_size = strlen(delim);
-  if (s->length >= delim_size) {
+
+  if (delim_size > 0) {
     for(size_t i = 0; i <= s->length - delim_size;) {
       if ((memcmp(s->string + i, delim, delim_size) == 0)) {
-        counter += 1;
+        delim_counter += 1;
         i += delim_size;
       } else {
         i += 1;
@@ -308,60 +314,47 @@ c_string** string_delim(const c_string* s, const char* delim) {
     }
   }
 
-  // Allocate space for the different strings
-  if (counter == 0) {
-    c_string** new_split_string = calloc(2, sizeof(c_string*));
-    if (!new_split_string) {
-      fputs("Memory allocation failure", stderr);
-      exit(EXIT_FAILURE);
-    }
-
-    new_split_string[0] = string_from_char(s->string, s->length);
-    new_split_string[1] = NULL;
-    return new_split_string;
-  }
-
-  // Get delimiter positions
-  long long* positions = calloc(counter + 2, sizeof(long long));
-  if (!positions) {
+  c_string** new_split_string = calloc(delim_counter + 1, sizeof(c_string*));
+  if (!new_split_string) {
     fputs("Memory allocation failure", stderr);
     exit(EXIT_FAILURE);
   }
 
-  positions[0] = -delim_size;
-  positions[counter + 1] = s->length;
+  // If we encounter no delimiter matches, return the original input string.
+  // We allocate with size 2 to make use of a NULL terminator at the end.
+  // This helps us print the resulting c_string*.
+  if (delim_counter == 1) {
+    new_split_string[0] = string_new(s);
+    new_split_string[1] = NULL;
+    return new_split_string;
+  }
 
-  size_t secondCounter = 1;
-  for(size_t i = 0; i <= s->length - delim_size;) {
+  size_t last_location = 0;
+  size_t result_index = 0;
+  for (size_t i = 0; i <= s->length - delim_size;) {
     if ((memcmp(s->string + i, delim, delim_size) == 0)) {
-      positions[secondCounter] = i;
-      secondCounter += 1;
+      if (i - last_location > 0) {
+        new_split_string[result_index] = string_from_char(s->string + last_location, i - last_location);
+      } else {
+        // There's nothing before the matched delimiter, so we add an empty string.
+        new_split_string[result_index] = initialize_buffer(0);
+      }
+
+      last_location = i + delim_size;
+      result_index += 1;
       i += delim_size;
     } else {
       i += 1;
     }
   }
 
-  c_string** new_split_string = calloc(counter + 2, sizeof(c_string*));
-  if (!new_split_string) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  if (last_location < s->length) {
+    new_split_string[result_index] = string_from_char(s->string + last_location, s->length - last_location);
+  } else {
+    new_split_string[result_index] = initialize_buffer(0);
   }
+  new_split_string[result_index + 1] = NULL;
 
-  // Dummy Node for termination when printing
-  new_split_string[counter + 1] = NULL;
-
-  for(size_t i = 1; i <= counter + 1; i++) {
-    new_split_string[i - 1] = string_from_char(s->string + positions[i - 1] + delim_size, positions[i] - positions[i - 1] - delim_size);
-
-    if (positions[i] - positions[i - 1] - delim_size == 0) {
-      new_split_string[i - 1]->string = NULL;
-      new_split_string[i - 1]->length = 0;
-      continue;
-    }
-  }
-
-  free(positions);
   return new_split_string;
 }
 
