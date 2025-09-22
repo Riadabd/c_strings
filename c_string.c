@@ -246,7 +246,7 @@ int string_compare(const c_string* first, const c_string* second) {
 /* Printing Functions */
 
 void print(const c_string* s) {
-  printf("%.*s", s->length, s->string);
+  printf("%.*s", (int)s->length, s->string);
 }
 
 void print_delim_strings(c_string** s) {
@@ -262,19 +262,19 @@ void print_delim_strings(c_string** s) {
 // Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
 void print_colored(const c_string* s, const char* color) {
   if ((strcmp(color, "red") == 0) || (strcmp(color, "Red")) == 0) {
-    printf(ANSI_COLOR_RED "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_RED "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "green") == 0) || (strcmp(color, "Green")) == 0) {
-    printf(ANSI_COLOR_GREEN "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_GREEN "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "yellow") == 0) || (strcmp(color, "Yellow")) == 0) {
-    printf(ANSI_COLOR_YELLOW "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_YELLOW "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "blue") == 0) || (strcmp(color, "Blue")) == 0) {
-    printf(ANSI_COLOR_BLUE "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_BLUE "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "magenta") == 0) || (strcmp(color, "Magenta")) == 0) {
-    printf(ANSI_COLOR_MAGENTA "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_MAGENTA "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "cyan") == 0) || (strcmp(color, "Cyan")) == 0) {
-    printf(ANSI_COLOR_CYAN "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_CYAN "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "white") == 0) || (strcmp(color, "White")) == 0) {
-    printf(ANSI_COLOR_WHITE "%.*s" ANSI_COLOR_RESET, s->length, s->string);
+    printf(ANSI_COLOR_WHITE "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   }
 }
 
