@@ -341,64 +341,28 @@
 # TOOLCHAIN CONFIGURATION
 ################################################################
 
-#:tools:
-# Ceedling defaults to using gcc for compiling, linking, etc.
-# As [:tools] is blank, gcc will be used (so long as it's in your system path)
-# See documentation to configure a given toolchain for use
-# :tools:
-#   :test_compiler:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_linker:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_assembler:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_fixture:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_includes_preprocessor:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_file_preprocessor:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :test_file_preprocessor_directives:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :release_compiler:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :release_linker:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :release_assembler:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
-#   :release_dependencies_generator:
-#     :executable:
-#     :arguments: []
-#     :name:
-#     :optional: FALSE
+:tools:
+  :test_compiler:
+    :executable: gcc
+    :arguments:
+      - -std=c99
+      - -Wall
+      - -Wextra
+      - -pedantic
+      - -g
+      - -fstack-protector-all
+      - -O2
+      - -D_FORTIFY_SOURCE=2
+      - -fno-omit-frame-pointer
+      - -march=native
+      - -I"${5}"
+      - -D"${6}"
+      - -c "${1}"
+      - -o "${2}"
+  :test_linker:
+    :executable: gcc
+    :arguments:
+      - -fstack-protector-all
+      - -o "${2}"
+      - "${1}"
 ...

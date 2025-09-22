@@ -1,4 +1,5 @@
 OUT_DIR := out
+CC ?= gcc
 CEEDLING ?= /opt/homebrew/lib/ruby/gems/3.4.0/bin/ceedling
 LIB_OBJ := $(OUT_DIR)/c_string.o
 LIB := $(OUT_DIR)/libc_strings.a
@@ -9,7 +10,7 @@ $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
 $(LIB_OBJ): c_string.c c_string.h | $(OUT_DIR)
-	clang -std=c99 -Wall -Wextra -pedantic -O2 -c c_string.c -o $(LIB_OBJ)
+	$(CC) -std=c99 -Wall -Wextra -pedantic -O2 -c c_string.c -o $(LIB_OBJ)
 
 $(LIB): $(LIB_OBJ)
 	ar rcs $(LIB) $(LIB_OBJ)
