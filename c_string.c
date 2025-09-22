@@ -42,7 +42,7 @@ static char* itoa_c(int value, char* result, int base) {
   if (tmp_value < 0) *ptr++ = '-';
   //*ptr-- = '\0';
   ptr--;
-  while(ptr1 < ptr) {
+  while (ptr1 < ptr) {
     tmp_char = *ptr;
     *ptr--= *ptr1;
     *ptr1++ = tmp_char;
@@ -304,7 +304,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
   const size_t delim_size = strlen(delim);
 
   if (delim_size > 0) {
-    for(size_t i = 0; i <= s->length - delim_size;) {
+    for (size_t i = 0; i <= s->length - delim_size;) {
       if ((memcmp(s->string + i, delim, delim_size) == 0)) {
         delim_counter += 1;
         i += delim_size;
