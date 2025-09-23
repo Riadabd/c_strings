@@ -145,6 +145,11 @@ c_string* string_from_char(const char* s, const int length) {
 
 // Start and End are inclusive bounds
 c_string* sub_string(c_string* s, size_t start, size_t end) {
+  if (s->length == 0) {
+    fputs("Cannot fetch a sub-string of an empty string", stderr);
+    return NULL;
+  }
+
   if ((start > s->length - 1) || (start < 0) || (end > s->length - 1) || (end < 0)) {
     fputs("Start or end indices are invalid", stderr);
     return NULL;
