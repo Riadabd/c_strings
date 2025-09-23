@@ -303,7 +303,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
   size_t delim_counter = 1;
   const size_t delim_size = strlen(delim);
 
-  if (delim_size > 0) {
+  if (delim_size > 0 && delim_size <= s->length) {
     for (size_t i = 0; i <= s->length - delim_size;) {
       if ((memcmp(s->string + i, delim, delim_size) == 0)) {
         delim_counter += 1;
