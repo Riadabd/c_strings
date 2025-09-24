@@ -4,7 +4,10 @@
 #include <string.h>
 
 static c_string* make_string(const char* literal) {
-  return string_from_char(literal, (int)strlen(literal));
+  CStringResult result = string_from_char(literal, (int)strlen(literal));
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, result.status);
+  TEST_ASSERT_NOT_NULL(result.value);
+  return result.value;
 }
 
 void setUp(void) {}
@@ -13,61 +16,66 @@ void tearDown(void) {}
 
 void test_trim_char_removes_all_occurrences(void) {
   c_string* input = make_string("banana");
-  c_string* trimmed = trim_char(input, 'a');
+  CStringResult trimmed = trim_char(input, 'a');
 
-  TEST_ASSERT_NOT_NULL(trimmed);
-  TEST_ASSERT_EQUAL_size_t(3, trimmed->length);
-  TEST_ASSERT_EQUAL_MEMORY("bnn", trimmed->string, trimmed->length);
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, trimmed.status);
+  TEST_ASSERT_NOT_NULL(trimmed.value);
+  TEST_ASSERT_EQUAL_size_t(3, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY("bnn", trimmed.value->string, trimmed.value->length);
 
-  destroy_string(trimmed);
+  destroy_string(trimmed.value);
   destroy_string(input);
 }
 
 void test_trim_char_returns_copy_when_character_missing(void) {
   c_string* input = make_string("citrus");
-  c_string* trimmed = trim_char(input, 'z');
+  CStringResult trimmed = trim_char(input, 'z');
 
-  TEST_ASSERT_NOT_NULL(trimmed);
-  TEST_ASSERT_NOT_EQUAL(input, trimmed);
-  TEST_ASSERT_EQUAL_size_t(input->length, trimmed->length);
-  TEST_ASSERT_EQUAL_MEMORY(input->string, trimmed->string, trimmed->length);
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, trimmed.status);
+  TEST_ASSERT_NOT_NULL(trimmed.value);
+  TEST_ASSERT_NOT_EQUAL(input, trimmed.value);
+  TEST_ASSERT_EQUAL_size_t(input->length, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY(input->string, trimmed.value->string, trimmed.value->length);
 
-  destroy_string(trimmed);
+  destroy_string(trimmed.value);
   destroy_string(input);
 }
 
 void test_trim_char_single_match(void) {
   c_string* input = make_string("abc");
 
-  c_string* trimmed = trim_char(input, 'b');
-  TEST_ASSERT_NOT_NULL(trimmed);
-  TEST_ASSERT_EQUAL_size_t(2, trimmed->length);
-  TEST_ASSERT_EQUAL_MEMORY("ac", trimmed->string, trimmed->length);
+  CStringResult trimmed = trim_char(input, 'b');
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, trimmed.status);
+  TEST_ASSERT_NOT_NULL(trimmed.value);
+  TEST_ASSERT_EQUAL_size_t(2, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY("ac", trimmed.value->string, trimmed.value->length);
 
-  destroy_string(trimmed);
+  destroy_string(trimmed.value);
   destroy_string(input);
 }
 
 void test_trim_char_leading_match(void) {
   c_string* input = make_string("-abc");
-  c_string* trimmed = trim_char(input, '-');
+  CStringResult trimmed = trim_char(input, '-');
 
-  TEST_ASSERT_NOT_NULL(trimmed);
-  TEST_ASSERT_EQUAL_size_t(3, trimmed->length);
-  TEST_ASSERT_EQUAL_MEMORY("abc", trimmed->string, trimmed->length);
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, trimmed.status);
+  TEST_ASSERT_NOT_NULL(trimmed.value);
+  TEST_ASSERT_EQUAL_size_t(3, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY("abc", trimmed.value->string, trimmed.value->length);
 
-  destroy_string(trimmed);
+  destroy_string(trimmed.value);
   destroy_string(input);
 }
 
 void test_trim_char_collapsed_runs(void) {
   c_string* input = make_string("a--b");
-  c_string* trimmed = trim_char(input, '-');
+  CStringResult trimmed = trim_char(input, '-');
 
-  TEST_ASSERT_NOT_NULL(trimmed);
-  TEST_ASSERT_EQUAL_size_t(2, trimmed->length);
-  TEST_ASSERT_EQUAL_MEMORY("ab", trimmed->string, trimmed->length);
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, trimmed.status);
+  TEST_ASSERT_NOT_NULL(trimmed.value);
+  TEST_ASSERT_EQUAL_size_t(2, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY("ab", trimmed.value->string, trimmed.value->length);
 
-  destroy_string(trimmed);
+  destroy_string(trimmed.value);
   destroy_string(input);
 }

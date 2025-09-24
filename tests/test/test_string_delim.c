@@ -4,7 +4,10 @@
 #include <string.h>
 
 static c_string* make_string(const char* literal) {
-  return string_from_char(literal, (int)strlen(literal));
+  CStringResult result = string_from_char(literal, (int)strlen(literal));
+  TEST_ASSERT_EQUAL_INT(CSTRING_OK, result.status);
+  TEST_ASSERT_NOT_NULL(result.value);
+  return result.value;
 }
 
 void setUp(void) {}
@@ -42,7 +45,6 @@ void test_string_delim_contains_empty_segments_for_leading_delimiter(void) {
   TEST_ASSERT_NULL_MESSAGE(pieces[2], "third segment should be NULL (end of array)");
 
   TEST_ASSERT_EQUAL_size_t_MESSAGE(0, pieces[0]->length, "first segment should have length 0");
-  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0]->string, "first segment string should not be NULL for empty segment");
 
   TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[1]->length, "second segment should have length 3");
   TEST_ASSERT_EQUAL_MEMORY_MESSAGE("ABC", pieces[1]->string, pieces[1]->length, "second segment should contain 'ABC'");

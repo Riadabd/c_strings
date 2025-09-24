@@ -14,11 +14,6 @@
 #define ANSI_COLOR_WHITE    "\x1B[37m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
 
-enum {
-  COPY_ERROR,
-  OUT_OF_MEMORY
-};
-
 /* Helper Functions */
 
 // Convert integer value to char*
@@ -84,98 +79,159 @@ void create_string(c_string* s, size_t length, char* input) {
 }
 
 // Initialize string buffer
-c_string* initialize_buffer(size_t length) {
+CStringResult initialize_buffer(size_t length) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
   c_string* data = calloc(1, sizeof(c_string));
   if (!data) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
-  }
-  data->length = length;
-  data->string = malloc(length);
-  if (!(data->string)) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
   }
 
-  return data;
+  data->length = length;
+
+  if (length == 0) {
+    data->string = NULL;
+    result.value = data;
+    return result;
+  }
+
+  data->string = malloc(length);
+  if (!data->string) {
+    free(data);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
+  result.value = data;
+  return result;
 }
 
 // Copy contents of a c_string into a new one ("Copy Constructor")
-c_string* string_new(const c_string* s) {
+CStringResult string_new(const c_string* s) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
+  if (!s) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  if (s->length > 0 && !s->string) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
   c_string* new_s = calloc(1, sizeof(c_string));
   if (!new_s) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
   }
 
   new_s->length = s->length;
-  new_s->string = calloc(1, new_s->length);
-  if (!(new_s->string)) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+
+  if (s->length == 0) {
+    new_s->string = NULL;
+    result.value = new_s;
+    return result;
   }
+
+  new_s->string = malloc(new_s->length);
+  if (!new_s->string) {
+    free(new_s);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
   memcpy(new_s->string, s->string, new_s->length);
 
-  return new_s;
+  result.value = new_s;
+  return result;
 }
 
-c_string* string_from_char(const char* s, const int length) {
+CStringResult string_from_char(const char* s, const int length) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
+  if (length < 0) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
   c_string* new_s = calloc(1, sizeof(c_string));
   if (!new_s) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
   }
 
   if (length == 0) {
     new_s->string = NULL;
     new_s->length = 0;
-    return new_s;
+    result.value = new_s;
+    return result;
   }
 
-  new_s->length = length;
-  new_s->string = calloc(1, new_s->length);
-  if (!(new_s->string)) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  if (!s) {
+    free(new_s);
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  new_s->length = (size_t)length;
+  new_s->string = malloc(new_s->length);
+  if (!new_s->string) {
+    free(new_s);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
   }
   memcpy(new_s->string, s, new_s->length);
 
-  return new_s;
+  result.value = new_s;
+  return result;
 }
 
-// Start and End are inclusive bounds
-c_string* sub_string(c_string* s, size_t start, size_t end) {
+// Start and end are inclusive bounds
+CStringResult sub_string(c_string* s, size_t start, size_t end) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
+  if (!s || !s->string) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
   if (s->length == 0) {
-    fputs("Cannot fetch a sub-string of an empty string", stderr);
-    return NULL;
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
   }
 
-  if ((start > s->length - 1) || (start < 0) || (end > s->length - 1) || (end < 0)) {
-    fputs("Start or end indices are invalid", stderr);
-    return NULL;
-  }
-
-  if (start > end) {
-    fputs("Start index cannot be greater than the end index", stderr);
-    return NULL;
+  if (start > end || end >= s->length) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
   }
 
   size_t length = end - start + 1;
-  c_string* result = calloc(1, sizeof(c_string));
-  if (!result) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  c_string* new_s = calloc(1, sizeof(c_string));
+  if (!new_s) {
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
   }
 
-  result->length = length;
-  result->string = malloc(length);
-  if (!(result->string)) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  new_s->length = length;
+
+  if (length == 0) {
+    new_s->string = NULL;
+    result.value = new_s;
+    return result;
   }
 
-  memcpy(result->string, s->string + start, length);
+  new_s->string = malloc(length);
+  if (!new_s->string) {
+    free(new_s);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
 
+  memcpy(new_s->string, s->string + start, length);
+
+  result.value = new_s;
   return result;
 }
 
@@ -321,15 +377,19 @@ c_string** string_delim(const c_string* s, const char* delim) {
 
   c_string** new_split_string = calloc(delim_counter + 1, sizeof(c_string*));
   if (!new_split_string) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+    return NULL;
   }
 
   // If we encounter no delimiter matches, return the original input string.
   // We allocate with size 2 to make use of a NULL terminator at the end.
   // This helps us print the resulting c_string*.
   if (delim_counter == 1) {
-    new_split_string[0] = string_new(s);
+    CStringResult copy = string_new(s);
+    if (copy.status != CSTRING_OK) {
+      free(new_split_string);
+      return NULL;
+    }
+    new_split_string[0] = copy.value;
     new_split_string[1] = NULL;
     return new_split_string;
   }
@@ -339,10 +399,20 @@ c_string** string_delim(const c_string* s, const char* delim) {
   for (size_t i = 0; i <= s->length - delim_size;) {
     if ((memcmp(s->string + i, delim, delim_size) == 0)) {
       if (i - last_location > 0) {
-        new_split_string[result_index] = string_from_char(s->string + last_location, i - last_location);
+        CStringResult slice = string_from_char(s->string + last_location, (int)(i - last_location));
+        if (slice.status != CSTRING_OK) {
+          destroy_delim_string(new_split_string);
+          return NULL;
+        }
+        new_split_string[result_index] = slice.value;
       } else {
         // There's nothing before the matched delimiter, so we add an empty string.
-        new_split_string[result_index] = initialize_buffer(0);
+        CStringResult empty = initialize_buffer(0);
+        if (empty.status != CSTRING_OK) {
+          destroy_delim_string(new_split_string);
+          return NULL;
+        }
+        new_split_string[result_index] = empty.value;
       }
 
       last_location = i + delim_size;
@@ -354,16 +424,38 @@ c_string** string_delim(const c_string* s, const char* delim) {
   }
 
   if (last_location < s->length) {
-    new_split_string[result_index] = string_from_char(s->string + last_location, s->length - last_location);
+    CStringResult tail = string_from_char(s->string + last_location, (int)(s->length - last_location));
+    if (tail.status != CSTRING_OK) {
+      destroy_delim_string(new_split_string);
+      return NULL;
+    }
+    new_split_string[result_index] = tail.value;
   } else {
-    new_split_string[result_index] = initialize_buffer(0);
+    CStringResult empty = initialize_buffer(0);
+    if (empty.status != CSTRING_OK) {
+      destroy_delim_string(new_split_string);
+      return NULL;
+    }
+    new_split_string[result_index] = empty.value;
   }
   new_split_string[result_index + 1] = NULL;
 
   return new_split_string;
 }
 
-c_string* trim_char(const c_string* s, const char c) {
+CStringResult trim_char(const c_string* s, const char c) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
+  if (!s) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  if (s->length > 0 && !s->string) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
   size_t num_of_occurences = 0;
 
   // Count number of character occurences
@@ -380,73 +472,113 @@ c_string* trim_char(const c_string* s, const char c) {
   }
 
   // If the input string is the target character itself, return an empty buffer.
-  if (s->length - num_of_occurences == 0) {
+  if (s->length == num_of_occurences) {
     return initialize_buffer(0);
   }
 
-  c_string* result_string = initialize_buffer(s->length - num_of_occurences);
+  CStringResult buffer = initialize_buffer(s->length - num_of_occurences);
+  if (buffer.status != CSTRING_OK) {
+    return buffer;
+  }
+
+  c_string* result_string = buffer.value;
 
   size_t last_location = 0;
   size_t copy_position = 0;
   for (size_t i = 0; i < s->length; i++) {
     if (s->string[i] == c) {
-      if (i - last_location > 0) {
+      if (i > last_location) {
         memcpy(result_string->string + copy_position, s->string + last_location, i - last_location);
         copy_position += i - last_location;
       }
 
-      // We increment last_location even if current index is at the same location as the last_location index.
-      // Otherwise, we risk:
-      //   * a case where the target char is at index 0, and we end up copying the full input string
-      // instead of just copying (input string length - 1).
-      //   * a case where the target char happens at consecutive indices, and last_location ends up falling behind.
+      // Increment last_location even if current index matches to avoid trailing copies.
       last_location = i + 1;
     }
   }
 
-  if (last_location >= s->length) {
-    return result_string;
+  if (last_location < s->length) {
+    memcpy(result_string->string + copy_position, s->string + last_location, s->length - last_location);
   }
 
-  // Perform final memcpy between final_position and s->length indices
-  memcpy(result_string->string + copy_position, s->string + last_location, s->length - last_location);
-
-  return result_string;
+  result.value = result_string;
+  return result;
 }
 
-c_string* to_lower(const c_string* s);
+CStringResult to_lower(const c_string* s);
 
-c_string* int_to_string(int x) {
+CStringResult int_to_string(int x) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+
   int length = snprintf(NULL, 0, "%d", x);
-  char* s = malloc(length);
-  if (!s) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  if (length < 0) {
+    result.status = CSTRING_ERR_INTERNAL;
+    return result;
   }
-  s = itoa_c(x, s, 10);
 
-  c_string* result = string_from_char(s, length);
+  size_t buffer_size = (size_t)length + 1;
+  char* s = malloc(buffer_size);
+  if (!s) {
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
+  if (!itoa_c(x, s, 10)) {
+    free(s);
+    result.status = CSTRING_ERR_INTERNAL;
+    return result;
+  }
+
+  CStringResult new_string = string_from_char(s, length);
   free(s);
-  return result;
+
+  return new_string;
 }
 
 // TODO: Check resources on how this can be implemented
-c_string* float_to_string(double x) {
-  int len = snprintf(NULL, 0, "%g", x);
-  char* s = (char*) malloc(len + 1);
-  if (!s) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
-  }
-  snprintf(s, len + 1, "%g", x);
+CStringResult float_to_string(double x) {
+  CStringResult result = { .value = NULL, .status = CSTRING_OK };
 
-  c_string* result = calloc(1, sizeof(c_string));
-  if (!result) {
-    fputs("Memory allocation failure", stderr);
-    exit(EXIT_FAILURE);
+  int len = snprintf(NULL, 0, "%g", x);
+  if (len < 0) {
+    result.status = CSTRING_ERR_INTERNAL;
+    return result;
   }
-  create_string(result, len, s);
+
+  size_t buffer_size = (size_t)len + 1;
+  char* s = malloc(buffer_size);
+  if (!s) {
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
+  if (snprintf(s, buffer_size, "%g", x) < 0) {
+    free(s);
+    result.status = CSTRING_ERR_INTERNAL;
+    return result;
+  }
+
+  CStringResult new_string = string_from_char(s, len);
   free(s);
 
-  return result;
+  return new_string;
+}
+
+const char *cstring_status_str(CStringStatus status) {
+    switch (status) {
+      case CSTRING_OK:
+          return "ok";
+      case CSTRING_ERR_NO_MEMORY:
+          return "no memory";
+      case CSTRING_ERR_INVALID_ARG:
+          return "invalid argument";
+      case CSTRING_ERR_IO:
+          return "i/o error";
+      case CSTRING_ERR_OVERFLOW:
+          return "overflow";
+      case CSTRING_ERR_INTERNAL:
+          return "internal error";
+      default:
+          return "unknown status";
+    }
 }

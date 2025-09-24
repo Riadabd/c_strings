@@ -9,19 +9,33 @@ typedef struct {
   size_t length;
 } c_string;
 
+typedef enum {
+  CSTRING_OK = 0,
+  CSTRING_ERR_NO_MEMORY,
+  CSTRING_ERR_INVALID_ARG,
+  CSTRING_ERR_IO,
+  CSTRING_ERR_OVERFLOW,
+  CSTRING_ERR_INTERNAL,
+} CStringStatus;
+
+typedef struct {
+  c_string* value;
+  CStringStatus status;
+} CStringResult;
+
 // Create string from an input
 void create_string(c_string* s, size_t length, char* input);
 
 // Initialize string buffer
-c_string* initialize_buffer(size_t length);
+CStringResult initialize_buffer(size_t length);
 
 // Copy contents of a c_string into a new one ("Copy Constructor")
-c_string* string_new(const c_string* s);
+CStringResult string_new(const c_string* s);
 
-c_string* string_from_char(const char* s, const int length);
+CStringResult string_from_char(const char* s, const int length);
 
 // Start and End are inclusive bounds
-c_string* sub_string(c_string* s, size_t start, size_t end);
+CStringResult sub_string(c_string* s, size_t start, size_t end);
 
 // Return string inside c_string with a null-terminator in case an external function requires it
 char* get_null_terminated_string(c_string* s);
@@ -63,11 +77,13 @@ void scan_string(c_string* s, const char* prompt);
 // Split string according to given delimiter
 c_string** string_delim(const c_string* s, const char* delim);
 
-c_string* trim_char(const c_string* s, const char c);
+CStringResult trim_char(const c_string* s, const char c);
 
-c_string* to_lower(const c_string* s);
+CStringResult to_lower(const c_string* s);
 
-c_string* int_to_string(int x);
+CStringResult int_to_string(int x);
 
 // TODO: Check resources on how this can be implemented
-c_string* float_to_string(double x);
+CStringResult float_to_string(double x);
+
+const char *cstring_status_str(CStringStatus status);
