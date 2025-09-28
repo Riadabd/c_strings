@@ -13,15 +13,26 @@ TODO
 # Potential Improvements
 
 - [x] Add tests
+- [x] Add a fuzzing harness using `afl++` and fuzz the codebase
 - [] Add UTF-8 support
-- [] Fuzz the codebase using afl++
 - [] Experiment with arenas (this will help avoid `malloc`, `calloc` and `free` calls for every single (de-)allocation)
 - [] Implement a mini-regex engine
 
 # Development
 
 - `make lib` builds `out/libc_strings.a` for reuse in other binaries.
-- `make test` runs the Unity/Ceedling suite located in `tests/`.
+- `make test` runs the Unity/Ceedling test suite located in `tests/`.
+
+## Fuzzing
+
+- **Platform support**: The fuzzing harness is maintained on macOS only right now.
+- **Prerequisites**: Install Homebrew and then `brew install llvm` so `afl-clang-fast` is available. Ensure afl++ itself is installed and on your `PATH` (`afl-fuzz --version`). You’ll also need Xcode Command Line Tools for `make`, plus a recent Ruby if you plan to use the helper Fish scripts.
+- **Build the harness**: Run `make fuzz-build` to compile `fuzz/c_string_fuzzer.c` together with the library under afl++ with AddressSanitizer. The instrumented binary is written to `out/fuzz/c_string_fuzzer`. Rebuild after modifying library code.
+- **Run a session**: Execute `make fuzz` to launch afl++ with the bundled seeds in `fuzz/corpus/`, storing results under `fuzz/findings/`. The target wraps the required macOS environment variables (`MallocNanoZone=0`, `AFL_SKIP_CPUFREQ=1`) so you don’t have to remember them.
+    - **Resume a session**: You can a resume a fuzzing session you had previously stopped by running `make fuzz-resume` or `scripts/run_afl_session.fish make fuzz` as discussed below.
+- **If afl++ complains**: Use `scripts/run_afl_session.fish make fuzz` to apply temporary macOS CrashReporter and SHM tweaks before starting the run; the script reverts them once the session ends.
+    - SHM stands for shared memory. For more deeper info, afl++ uses a System V shared-memory segment to hand coverage data from the instrumented target back to the fuzzer. On macOS the default limits for that SHM region can be tight, so the helper script tweaks those limits before launching afl-fuzz and restores them when the run ends.
+    - macOS's crashreporter is also temporarily disabled as advised (afl++ will refuse to run in any case before you do so). The reason is that afl++ collects crashes in an output file, which macOS would otherwise trigger the reporter GUI for and distrupt the running process.
 
 ## Testing
 

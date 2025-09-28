@@ -4,7 +4,12 @@ CEEDLING ?= /opt/homebrew/lib/ruby/gems/3.4.0/bin/ceedling
 LIB_OBJ := $(OUT_DIR)/c_string.o
 LIB := $(OUT_DIR)/libc_strings.a
 
-.PHONY: lib test clean
+FUZZ_OUT_DIR := $(OUT_DIR)/fuzz
+FUZZ_TARGET := $(FUZZ_OUT_DIR)/c_string_fuzzer
+AFL_CC ?= afl-clang-fast
+AFL_CFLAGS ?= -std=c99 -Wall -Wextra -pedantic -Wno-gnu-statement-expression -O1 -g
+
+.PHONY: lib test clean fuzz-build fuzz fuzz-resume
 
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
@@ -16,6 +21,20 @@ $(LIB): $(LIB_OBJ)
 	ar rcs $(LIB) $(LIB_OBJ)
 
 lib: $(LIB)
+
+$(FUZZ_OUT_DIR): | $(OUT_DIR)
+	mkdir -p $(FUZZ_OUT_DIR)
+
+$(FUZZ_TARGET): c_string.c c_string.h fuzz/c_string_fuzzer.c | $(FUZZ_OUT_DIR)
+	AFL_USE_ASAN=1 $(AFL_CC) $(AFL_CFLAGS) -I. c_string.c fuzz/c_string_fuzzer.c -o $(FUZZ_TARGET)
+
+fuzz-build: $(FUZZ_TARGET)
+
+fuzz: fuzz-build
+	env MallocNanoZone=0 AFL_SKIP_CPUFREQ=1 afl-fuzz -i fuzz/corpus -o fuzz/findings -- $(FUZZ_TARGET) @@
+
+fuzz-resume: fuzz-build
+	env MallocNanoZone=0 AFL_SKIP_CPUFREQ=1 AFL_AUTORESUME=1 afl-fuzz -i - -o fuzz/findings -- $(FUZZ_TARGET) @@
 
 clang_win: | $(OUT_DIR)
 	clang -std=c99 -Weverything -g -fsanitize=undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/clang_win_test.exe
