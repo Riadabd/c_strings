@@ -9,7 +9,7 @@ FUZZ_TARGET := $(FUZZ_OUT_DIR)/c_string_fuzzer
 AFL_CC ?= afl-clang-fast
 AFL_CFLAGS ?= -std=c99 -Wall -Wextra -pedantic -Wno-gnu-statement-expression -O1 -g
 
-.PHONY: lib test clean fuzz-build fuzz fuzz-resume
+.PHONY: lib test test-one clean fuzz-build fuzz fuzz-resume
 
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
@@ -51,6 +51,12 @@ gcc_linux: | $(OUT_DIR)
 
 test: lib
 	cd tests && $(CEEDLING) test:all
+
+test-one: lib
+ifeq ($(strip $(TEST)),)
+	$(error TEST variable not set. Usage: make test-one TEST=test_name)
+endif
+	cd tests && $(CEEDLING) test:$(TEST)
 
 clean:
 	rm -rf $(OUT_DIR) tests/build
