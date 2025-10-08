@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,9 @@
 
 typedef struct {
   char* string;
-  size_t length;
+  size_t length;            // number of bytes stored in `string`
+  size_t codepoint_length;  // number of UTF-8 code points represented
+  bool utf8_valid;          // true when `string` contains valid UTF-8 data
 } c_string;
 
 typedef enum {
@@ -66,6 +69,9 @@ void print_delim_strings(c_string** s);
 
 // Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
 void print_colored(const c_string* s, const char* color);
+
+// Helper to inspect UTF-8 metadata when debugging
+void print_utf8_info(const c_string* s);
 
 size_t get_delim_string_length(c_string** s);
 

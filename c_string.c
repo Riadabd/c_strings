@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,115 @@
 #define ANSI_COLOR_RESET    "\x1b[0m"
 
 /* Helper Functions */
+
+// Holds the result of validating a UTF-8 buffer so we can return both status
+// and a code-point count without re-scanning.
+typedef struct {
+  bool valid;
+  size_t codepoints;
+} Utf8Analysis;
+
+static Utf8Analysis analyze_utf8(const char* data, size_t length) {
+  Utf8Analysis result = { .valid = false, .codepoints = 0 };
+
+  if (!data) {
+    if (length == 0) {
+      result.valid = true;
+    }
+    return result;
+  }
+
+  size_t i = 0;
+  size_t codepoints = 0;
+
+  // Walk the buffer one UTF-8 sequence at a time until all bytes are consumed.
+  while (i < length) {
+    unsigned char byte = (unsigned char)data[i];
+    size_t sequence_length = 0;
+    uint32_t codepoint = 0;
+
+    // Determine the expected length of the UTF-8 sequence from the lead byte.
+    if (byte < 0x80) {
+      // 0xxxxxxx → ASCII, single byte sequence.
+      sequence_length = 1;
+      codepoint = byte;
+    } else if ((byte & 0xE0) == 0xC0) {
+      // 110xxxxx → two-byte sequence.
+      sequence_length = 2;
+      codepoint = byte & 0x1F;
+    } else if ((byte & 0xF0) == 0xE0) {
+      // 1110xxxx → three-byte sequence.
+      sequence_length = 3;
+      codepoint = byte & 0x0F;
+    } else if ((byte & 0xF8) == 0xF0) {
+      // 11110xxx → four-byte sequence.
+      sequence_length = 4;
+      codepoint = byte & 0x07;
+    } else {
+      // Lead byte does not match any UTF-8 pattern.
+      return result;
+    }
+
+    // Bail out if the buffer ends before the sequence completes.
+    if (i + sequence_length > length) {
+      return result;
+    }
+
+    for (size_t j = 1; j < sequence_length; j++) {
+      unsigned char continuation = (unsigned char)data[i + j];
+      // All continuation bytes must start with the "10" prefix.
+      if ((continuation & 0xC0) != 0x80) {
+        return result;
+      }
+      codepoint = (codepoint << 6) | (continuation & 0x3F);
+    }
+
+    // Reject overlong encodings and surrogate/invalid ranges to preserve UTF-8 invariants.
+    if (sequence_length == 2 && codepoint < 0x80) {
+      return result;  // overlong encoding
+    }
+    if (sequence_length == 3) {
+      if (codepoint < 0x800) {
+        return result;  // overlong encoding
+      }
+      if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+        return result;  // UTF-16 surrogate range is invalid in UTF-8
+      }
+    }
+    if (sequence_length == 4) {
+      if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
+        return result;
+      }
+    }
+
+    // Successful sequence: advance to the next lead byte and bump the total.
+    codepoints += 1;
+    i += sequence_length;
+  }
+
+  result.valid = true;
+  result.codepoints = codepoints;
+  return result;
+}
+
+static bool update_utf8_metadata(c_string* s) {
+  if (!s) {
+    return false;
+  }
+
+  if (s->length == 0 || !s->string) {
+    // Zero-length strings are trivially valid and contain zero code points.
+    s->codepoint_length = 0;
+    s->utf8_valid = (s->length == 0);
+    return s->utf8_valid;
+  }
+
+  // Analyze once and cache the derived metadata on the string object.
+  Utf8Analysis analysis = analyze_utf8(s->string, s->length);
+  s->codepoint_length = analysis.codepoints;
+  s->utf8_valid = analysis.valid;
+  return analysis.valid;
+}
 
 // Convert integer value to char*
 static char* itoa_c(int value, char* result, int base) {
@@ -76,6 +186,11 @@ static unsigned int count_bchop(unsigned int n) {
 void create_string(c_string* s, size_t length, char* input) {
   s->length = length;
   memcpy(s->string, input, s->length);
+  if (!update_utf8_metadata(s)) {
+    // Leave the string allocated but mark the metadata so callers can see the parse failed.
+    s->codepoint_length = 0;
+    s->utf8_valid = false;
+  }
 }
 
 // Initialize string buffer
@@ -92,6 +207,8 @@ CStringResult initialize_buffer(size_t length) {
 
   if (length == 0) {
     data->string = NULL;
+    data->codepoint_length = 0;
+    data->utf8_valid = true;
     result.value = data;
     return result;
   }
@@ -103,6 +220,9 @@ CStringResult initialize_buffer(size_t length) {
     return result;
   }
 
+  // Caller must write valid UTF-8 into the buffer before the metadata can be trusted.
+  data->codepoint_length = 0;
+  data->utf8_valid = false;
   result.value = data;
   return result;
 }
@@ -131,6 +251,8 @@ CStringResult string_new(const c_string* s) {
 
   if (s->length == 0) {
     new_s->string = NULL;
+    new_s->codepoint_length = 0;
+    new_s->utf8_valid = true;
     result.value = new_s;
     return result;
   }
@@ -143,6 +265,14 @@ CStringResult string_new(const c_string* s) {
   }
 
   memcpy(new_s->string, s->string, new_s->length);
+
+  if (!update_utf8_metadata(new_s)) {
+    // Copy succeeded at the byte level, but the contents are invalid UTF-8.
+    free(new_s->string);
+    free(new_s);
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
 
   result.value = new_s;
   return result;
@@ -165,11 +295,14 @@ CStringResult string_from_char(const char* s, const int length) {
   if (length == 0) {
     new_s->string = NULL;
     new_s->length = 0;
+    new_s->codepoint_length = 0;
+    new_s->utf8_valid = true;
     result.value = new_s;
     return result;
   }
 
   if (!s) {
+    // Non-zero length with NULL data is undefined; treat as invalid input.
     free(new_s);
     result.status = CSTRING_ERR_INVALID_ARG;
     return result;
@@ -183,6 +316,13 @@ CStringResult string_from_char(const char* s, const int length) {
     return result;
   }
   memcpy(new_s->string, s, new_s->length);
+  if (!update_utf8_metadata(new_s)) {
+    // Reject malformed UTF-8 so we never hand back an invalid `c_string`.
+    free(new_s->string);
+    free(new_s);
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
 
   result.value = new_s;
   return result;
@@ -337,6 +477,20 @@ void print_colored(const c_string* s, const char* color) {
   } else if ((strcmp(color, "white") == 0) || (strcmp(color, "White")) == 0) {
     printf(ANSI_COLOR_WHITE "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   }
+}
+
+void print_utf8_info(const c_string* s) {
+  if (!s) {
+    printf("<null c_string>\n");
+    return;
+  }
+
+  printf("string=%.*s bytes=%zu codepoints=%zu utf8_valid=%s\n",
+          (int)s->length,
+          s->string,
+          s->length,
+          s->codepoint_length,
+          s->utf8_valid ? "true" : "false");
 }
 
 size_t get_delim_string_length(c_string** s) {
