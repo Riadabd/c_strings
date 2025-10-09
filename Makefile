@@ -3,6 +3,9 @@ CC ?= gcc
 CEEDLING ?= /opt/homebrew/lib/ruby/gems/3.4.0/bin/ceedling
 LIB_OBJ := $(OUT_DIR)/c_string.o
 LIB := $(OUT_DIR)/libc_strings.a
+
+# Fetch all .c and h. files in the repo except those inside ./out/ and
+# ./tests/build/* .
 FORMAT_SRCS := $(shell find . -type f \( -name '*.c' -o -name '*.h' \) \
 	! -path './out/*' ! -path './tests/build/*')
 
@@ -13,6 +16,8 @@ AFL_CFLAGS ?= -std=c99 -Wall -Wextra -pedantic -Wno-gnu-statement-expression -O1
 
 .PHONY: lib test test-one clean fuzz-build fuzz fuzz-resume fmt fmt-check
 
+# This allows the user to run `make clang` and have the Makefile automatically
+# use the correct make target.
 ifeq ($(OS),Windows_NT)
 TARGET_SUFFIX := win
 else
@@ -34,6 +39,10 @@ $(LIB): $(LIB_OBJ)
 
 lib: $(LIB)
 
+#
+# Fuzzing
+#
+
 $(FUZZ_OUT_DIR): | $(OUT_DIR)
 	mkdir -p $(FUZZ_OUT_DIR)
 
@@ -48,6 +57,10 @@ fuzz: fuzz-build
 fuzz-resume: fuzz-build
 	env MallocNanoZone=0 AFL_SKIP_CPUFREQ=1 AFL_AUTORESUME=1 afl-fuzz -i - -o fuzz/findings -- $(FUZZ_TARGET) @@
 
+#
+# Compiling
+#
+
 clang_win: | $(OUT_DIR)
 	clang -std=c99 -Weverything -g -fsanitize=undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/clang_win_test.exe
 
@@ -60,6 +73,9 @@ gcc_win: | $(OUT_DIR)
 gcc_linux: | $(OUT_DIR)
 	gcc -std=c99 -Wall -Wextra -pedantic -g -fstack-protector-all -O2 -D_FORTIFY_SOURCE=2 -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/gcc_linux_test
 
+#
+# Testing
+#
 
 test: lib
 	cd tests && $(CEEDLING) test:all
@@ -72,6 +88,10 @@ endif
 
 clean:
 	rm -rf $(OUT_DIR) tests/build
+
+#
+# Formatting
+#
 
 fmt:
 	@if [ -z "$(FORMAT_SRCS)" ]; then \
