@@ -11,6 +11,16 @@ AFL_CFLAGS ?= -std=c99 -Wall -Wextra -pedantic -Wno-gnu-statement-expression -O1
 
 .PHONY: lib test test-one clean fuzz-build fuzz fuzz-resume
 
+ifeq ($(OS),Windows_NT)
+TARGET_SUFFIX := win
+else
+TARGET_SUFFIX := linux
+endif
+
+.PHONY: clang gcc
+clang: clang_$(TARGET_SUFFIX)
+gcc: gcc_$(TARGET_SUFFIX)
+
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 
