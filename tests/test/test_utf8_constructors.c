@@ -1,7 +1,7 @@
-#include "unity.h"
-#include "c_string.h"
-
 #include <string.h>
+
+#include "c_string.h"
+#include "unity.h"
 
 static c_string* make_string(const char* literal) {
   CStringResult result = string_from_char(literal, (int)strlen(literal));
@@ -28,7 +28,7 @@ void test_string_from_char_counts_utf8_codepoints(void) {
 }
 
 void test_string_from_char_rejects_invalid_utf8(void) {
-  const char payload[] = { (char)0xC3, (char)0x28 };  // invalid continuation
+  const char payload[] = {(char)0xC3, (char)0x28};  // invalid continuation
   CStringResult result = string_from_char(payload, (int)sizeof(payload));
 
   TEST_ASSERT_EQUAL_INT(CSTRING_ERR_INVALID_ARG, result.status);
@@ -42,7 +42,8 @@ void test_string_new_copies_utf8_metadata(void) {
   TEST_ASSERT_EQUAL_INT(CSTRING_OK, copy_result.status);
   TEST_ASSERT_NOT_NULL(copy_result.value);
   TEST_ASSERT_EQUAL_size_t(original->length, copy_result.value->length);
-  TEST_ASSERT_EQUAL_size_t(original->codepoint_length, copy_result.value->codepoint_length);
+  TEST_ASSERT_EQUAL_size_t(original->codepoint_length,
+                           copy_result.value->codepoint_length);
   TEST_ASSERT_EQUAL(original->utf8_valid, copy_result.value->utf8_valid);
 
   destroy_string(copy_result.value);

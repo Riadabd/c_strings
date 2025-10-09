@@ -1,19 +1,19 @@
+#include "c_string.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "c_string.h"
-
 // ANSI Escape Codes for colours
-#define ANSI_COLOR_RED      "\x1b[31m"
-#define ANSI_COLOR_GREEN    "\x1b[32m"
-#define ANSI_COLOR_YELLOW   "\x1b[33m"
-#define ANSI_COLOR_BLUE     "\x1b[34m"
-#define ANSI_COLOR_MAGENTA  "\x1b[35m"
-#define ANSI_COLOR_CYAN     "\x1b[36m"
-#define ANSI_COLOR_WHITE    "\x1B[37m"
-#define ANSI_COLOR_RESET    "\x1b[0m"
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_GREEN "\x1b[32m"
+#define ANSI_COLOR_YELLOW "\x1b[33m"
+#define ANSI_COLOR_BLUE "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_WHITE "\x1B[37m"
+#define ANSI_COLOR_RESET "\x1b[0m"
 
 /* Helper Functions */
 
@@ -25,7 +25,7 @@ typedef struct {
 } Utf8Analysis;
 
 static Utf8Analysis analyze_utf8(const char* data, size_t length) {
-  Utf8Analysis result = { .valid = false, .codepoints = 0 };
+  Utf8Analysis result = {.valid = false, .codepoints = 0};
 
   if (!data) {
     if (length == 0) {
@@ -79,7 +79,8 @@ static Utf8Analysis analyze_utf8(const char* data, size_t length) {
       codepoint = (codepoint << 6) | (continuation & 0x3F);
     }
 
-    // Reject overlong encodings and surrogate/invalid ranges to preserve UTF-8 invariants.
+    // Reject overlong encodings and surrogate/invalid ranges to preserve UTF-8
+    // invariants.
     if (sequence_length == 2 && codepoint < 0x80) {
       return result;  // overlong encoding
     }
@@ -134,13 +135,15 @@ static char* itoa_c(int value, char* result, int base) {
     return result;
   }
 
-  char* ptr = result, *ptr1 = result, tmp_char;
+  char *ptr = result, *ptr1 = result, tmp_char;
   int tmp_value;
 
   do {
     tmp_value = value;
     value /= base;
-    *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
+    *ptr++ =
+        "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxy"
+        "z"[35 + (tmp_value - value * base)];
   } while (value);
 
   // Apply negative sign
@@ -149,7 +152,7 @@ static char* itoa_c(int value, char* result, int base) {
   ptr--;
   while (ptr1 < ptr) {
     tmp_char = *ptr;
-    *ptr--= *ptr1;
+    *ptr-- = *ptr1;
     *ptr1++ = tmp_char;
   }
 
@@ -187,7 +190,8 @@ void create_string(c_string* s, size_t length, char* input) {
   s->length = length;
   memcpy(s->string, input, s->length);
   if (!update_utf8_metadata(s)) {
-    // Leave the string allocated but mark the metadata so callers can see the parse failed.
+    // Leave the string allocated but mark the metadata so callers can see the
+    // parse failed.
     s->codepoint_length = 0;
     s->utf8_valid = false;
   }
@@ -195,7 +199,7 @@ void create_string(c_string* s, size_t length, char* input) {
 
 // Initialize string buffer
 CStringResult initialize_buffer(size_t length) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   c_string* data = calloc(1, sizeof(c_string));
   if (!data) {
@@ -220,7 +224,8 @@ CStringResult initialize_buffer(size_t length) {
     return result;
   }
 
-  // Caller must write valid UTF-8 into the buffer before the metadata can be trusted.
+  // Caller must write valid UTF-8 into the buffer before the metadata can be
+  // trusted.
   data->codepoint_length = 0;
   data->utf8_valid = false;
   result.value = data;
@@ -229,7 +234,7 @@ CStringResult initialize_buffer(size_t length) {
 
 // Copy contents of a c_string into a new one ("Copy Constructor")
 CStringResult string_new(const c_string* s) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   if (!s) {
     result.status = CSTRING_ERR_INVALID_ARG;
@@ -279,7 +284,7 @@ CStringResult string_new(const c_string* s) {
 }
 
 CStringResult string_from_char(const char* s, const int length) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   if (length < 0) {
     result.status = CSTRING_ERR_INVALID_ARG;
@@ -330,7 +335,7 @@ CStringResult string_from_char(const char* s, const int length) {
 
 // Start and end are inclusive bounds
 CStringResult sub_string(c_string* s, size_t start, size_t end) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   if (!s || !s->string) {
     result.status = CSTRING_ERR_INVALID_ARG;
@@ -375,7 +380,8 @@ CStringResult sub_string(c_string* s, size_t start, size_t end) {
   return result;
 }
 
-// Return string inside c_string with a null-terminator in case an external function requires it
+// Return string inside c_string with a null-terminator in case an external
+// function requires it
 char* get_null_terminated_string(c_string* s) {
   char* result = malloc(s->length + 1);
   if (!result) {
@@ -395,7 +401,8 @@ void destroy_string(c_string* input) {
   free(input);
 }
 
-/* Help function used to free the memory used by the c_string** in string_delim */
+/* Help function used to free the memory used by the c_string** in string_delim
+ */
 void destroy_delim_string(c_string** s) {
   size_t i = 0;
   while (s[i] != NULL) {
@@ -446,18 +453,20 @@ int string_compare(const c_string* first, const c_string* second) {
 
 /* Printing Functions */
 
-void print(const c_string* s) {
-  printf("%.*s", (int)s->length, s->string);
-}
+void print(const c_string* s) { printf("%.*s", (int)s->length, s->string); }
 
 void print_delim_strings(c_string** s) {
   size_t i = 0;
   printf("[");
   while (s[i + 1] != NULL) {
-    printf("'"); print(s[i]); printf("', ");
+    printf("'");
+    print(s[i]);
+    printf("', ");
     i += 1;
   }
-  printf("'"); print(s[i]); printf("']");
+  printf("'");
+  print(s[i]);
+  printf("']");
 }
 
 // Supported Colors: Red, Green, Yellow, Blue, Magenta and Cyan
@@ -467,11 +476,14 @@ void print_colored(const c_string* s, const char* color) {
   } else if ((strcmp(color, "green") == 0) || (strcmp(color, "Green")) == 0) {
     printf(ANSI_COLOR_GREEN "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "yellow") == 0) || (strcmp(color, "Yellow")) == 0) {
-    printf(ANSI_COLOR_YELLOW "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
+    printf(ANSI_COLOR_YELLOW "%.*s" ANSI_COLOR_RESET, (int)s->length,
+           s->string);
   } else if ((strcmp(color, "blue") == 0) || (strcmp(color, "Blue")) == 0) {
     printf(ANSI_COLOR_BLUE "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
-  } else if ((strcmp(color, "magenta") == 0) || (strcmp(color, "Magenta")) == 0) {
-    printf(ANSI_COLOR_MAGENTA "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
+  } else if ((strcmp(color, "magenta") == 0) ||
+             (strcmp(color, "Magenta")) == 0) {
+    printf(ANSI_COLOR_MAGENTA "%.*s" ANSI_COLOR_RESET, (int)s->length,
+           s->string);
   } else if ((strcmp(color, "cyan") == 0) || (strcmp(color, "Cyan")) == 0) {
     printf(ANSI_COLOR_CYAN "%.*s" ANSI_COLOR_RESET, (int)s->length, s->string);
   } else if ((strcmp(color, "white") == 0) || (strcmp(color, "White")) == 0) {
@@ -485,12 +497,9 @@ void print_utf8_info(const c_string* s) {
     return;
   }
 
-  printf("string=%.*s bytes=%zu codepoints=%zu utf8_valid=%s\n",
-          (int)s->length,
-          s->string,
-          s->length,
-          s->codepoint_length,
-          s->utf8_valid ? "true" : "false");
+  printf("string=%.*s bytes=%zu codepoints=%zu utf8_valid=%s\n", (int)s->length,
+         s->string, s->length, s->codepoint_length,
+         s->utf8_valid ? "true" : "false");
 }
 
 size_t get_delim_string_length(c_string** s) {
@@ -508,10 +517,10 @@ void scan_string(c_string* s, const char* prompt);
 /* String Transformation Functions */
 
 // Split string according to given delimiter.
-//  * If delimiter size > input size, we consider that the delimiter was not found
-//  and return the original input.
-//  * If delimiter is exactly the input string, we return ['', ''] since we have nothing "before"
-//  and "after" the delimiter match.
+//  * If delimiter size > input size, we consider that the delimiter was not
+//  found and return the original input.
+//  * If delimiter is exactly the input string, we return ['', ''] since we have
+//  nothing "before" and "after" the delimiter match.
 c_string** string_delim(const c_string* s, const char* delim) {
   // Count number of delimiter occurences.
   // We start the count at 1 since no match = returning the original string.
@@ -553,14 +562,16 @@ c_string** string_delim(const c_string* s, const char* delim) {
   for (size_t i = 0; i <= s->length - delim_size;) {
     if ((memcmp(s->string + i, delim, delim_size) == 0)) {
       if (i - last_location > 0) {
-        CStringResult slice = string_from_char(s->string + last_location, (int)(i - last_location));
+        CStringResult slice = string_from_char(s->string + last_location,
+                                               (int)(i - last_location));
         if (slice.status != CSTRING_OK) {
           destroy_delim_string(new_split_string);
           return NULL;
         }
         new_split_string[result_index] = slice.value;
       } else {
-        // There's nothing before the matched delimiter, so we add an empty string.
+        // There's nothing before the matched delimiter, so we add an empty
+        // string.
         CStringResult empty = initialize_buffer(0);
         if (empty.status != CSTRING_OK) {
           destroy_delim_string(new_split_string);
@@ -578,7 +589,8 @@ c_string** string_delim(const c_string* s, const char* delim) {
   }
 
   if (last_location < s->length) {
-    CStringResult tail = string_from_char(s->string + last_location, (int)(s->length - last_location));
+    CStringResult tail = string_from_char(s->string + last_location,
+                                          (int)(s->length - last_location));
     if (tail.status != CSTRING_OK) {
       destroy_delim_string(new_split_string);
       return NULL;
@@ -598,7 +610,7 @@ c_string** string_delim(const c_string* s, const char* delim) {
 }
 
 CStringResult trim_char(const c_string* s, const char c) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   if (!s) {
     result.status = CSTRING_ERR_INVALID_ARG;
@@ -619,8 +631,8 @@ CStringResult trim_char(const c_string* s, const char c) {
     }
   }
 
-  // If the input string does not contain the target character, return a copy of the
-  // input string.
+  // If the input string does not contain the target character, return a copy of
+  // the input string.
   if (num_of_occurences == 0) {
     return string_new(s);
   }
@@ -642,17 +654,20 @@ CStringResult trim_char(const c_string* s, const char c) {
   for (size_t i = 0; i < s->length; i++) {
     if (s->string[i] == c) {
       if (i > last_location) {
-        memcpy(result_string->string + copy_position, s->string + last_location, i - last_location);
+        memcpy(result_string->string + copy_position, s->string + last_location,
+               i - last_location);
         copy_position += i - last_location;
       }
 
-      // Increment last_location even if current index matches to avoid trailing copies.
+      // Increment last_location even if current index matches to avoid trailing
+      // copies.
       last_location = i + 1;
     }
   }
 
   if (last_location < s->length) {
-    memcpy(result_string->string + copy_position, s->string + last_location, s->length - last_location);
+    memcpy(result_string->string + copy_position, s->string + last_location,
+           s->length - last_location);
   }
 
   result.value = result_string;
@@ -662,7 +677,7 @@ CStringResult trim_char(const c_string* s, const char c) {
 CStringResult to_lower(const c_string* s);
 
 CStringResult int_to_string(int x) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   int length = snprintf(NULL, 0, "%d", x);
   if (length < 0) {
@@ -691,7 +706,7 @@ CStringResult int_to_string(int x) {
 
 // TODO: Check resources on how this can be implemented
 CStringResult float_to_string(double x) {
-  CStringResult result = { .value = NULL, .status = CSTRING_OK };
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   int len = snprintf(NULL, 0, "%g", x);
   if (len < 0) {
@@ -718,21 +733,21 @@ CStringResult float_to_string(double x) {
   return new_string;
 }
 
-const char *cstring_status_str(CStringStatus status) {
-    switch (status) {
-      case CSTRING_OK:
-          return "ok";
-      case CSTRING_ERR_NO_MEMORY:
-          return "no memory";
-      case CSTRING_ERR_INVALID_ARG:
-          return "invalid argument";
-      case CSTRING_ERR_IO:
-          return "i/o error";
-      case CSTRING_ERR_OVERFLOW:
-          return "overflow";
-      case CSTRING_ERR_INTERNAL:
-          return "internal error";
-      default:
-          return "unknown status";
-    }
+const char* cstring_status_str(CStringStatus status) {
+  switch (status) {
+    case CSTRING_OK:
+      return "ok";
+    case CSTRING_ERR_NO_MEMORY:
+      return "no memory";
+    case CSTRING_ERR_INVALID_ARG:
+      return "invalid argument";
+    case CSTRING_ERR_IO:
+      return "i/o error";
+    case CSTRING_ERR_OVERFLOW:
+      return "overflow";
+    case CSTRING_ERR_INTERNAL:
+      return "internal error";
+    default:
+      return "unknown status";
+  }
 }

@@ -7,7 +7,8 @@
 #include "c_string.h"
 
 #ifndef __AFL_LOOP
-#define __AFL_LOOP(_n) for (int __afl_loop_dummy = 0; __afl_loop_dummy < 1; ++__afl_loop_dummy)
+#define __AFL_LOOP(_n) \
+  for (int __afl_loop_dummy = 0; __afl_loop_dummy < 1; ++__afl_loop_dummy)
 #endif
 
 #ifndef __AFL_INIT
@@ -16,12 +17,13 @@
 
 #define MAX_INPUT_SIZE (1 << 16)
 
-static size_t read_input_file(const char *path, uint8_t *buffer, size_t capacity) {
+static size_t read_input_file(const char* path, uint8_t* buffer,
+                              size_t capacity) {
   if (!path) {
     return 0;
   }
 
-  FILE *fp = fopen(path, "rb");
+  FILE* fp = fopen(path, "rb");
   if (!fp) {
     return 0;
   }
@@ -31,17 +33,17 @@ static size_t read_input_file(const char *path, uint8_t *buffer, size_t capacity
   return bytes_read;
 }
 
-static void exercise_library(const uint8_t *data, size_t size) {
+static void exercise_library(const uint8_t* data, size_t size) {
   if (!data || size > (size_t)INT_MAX) {
     return;
   }
 
-  CStringResult base = string_from_char((const char *)data, (int)size);
+  CStringResult base = string_from_char((const char*)data, (int)size);
   if (base.status != CSTRING_OK || !base.value) {
     return;
   }
 
-  c_string *input = base.value;
+  c_string* input = base.value;
 
   if (input->length > 0) {
     size_t start = 0;
@@ -76,7 +78,7 @@ static void exercise_library(const uint8_t *data, size_t size) {
     delim_buf[1] = (size > 1) ? (char)data[size / 2] : '\0';
     delim_buf[2] = '\0';
 
-    c_string **split = string_delim(input, delim_buf);
+    c_string** split = string_delim(input, delim_buf);
     if (split) {
       destroy_delim_string(split);
     }
@@ -85,13 +87,13 @@ static void exercise_library(const uint8_t *data, size_t size) {
   destroy_string(input);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 #ifdef __AFL_HAVE_MANUAL_CONTROL
   __AFL_INIT();
 #endif
 
   static uint8_t buffer[MAX_INPUT_SIZE];
-  const char *input_path = argc > 1 ? argv[1] : NULL;
+  const char* input_path = argc > 1 ? argv[1] : NULL;
 
   if (input_path) {
     while (__AFL_LOOP(1000)) {

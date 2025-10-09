@@ -1,7 +1,7 @@
-#include "unity.h"
-#include "c_string.h"
-
 #include <string.h>
+
+#include "c_string.h"
+#include "unity.h"
 
 static c_string* make_string(const char* literal) {
   CStringResult result = string_from_char(literal, (int)strlen(literal));
@@ -42,12 +42,16 @@ void test_string_delim_contains_empty_segments_for_leading_delimiter(void) {
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces, "pieces array should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0], "first segment should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[1], "second segment should not be NULL");
-  TEST_ASSERT_NULL_MESSAGE(pieces[2], "third segment should be NULL (end of array)");
+  TEST_ASSERT_NULL_MESSAGE(pieces[2],
+                           "third segment should be NULL (end of array)");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(0, pieces[0]->length, "first segment should have length 0");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(0, pieces[0]->length,
+                                   "first segment should have length 0");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[1]->length, "second segment should have length 3");
-  TEST_ASSERT_EQUAL_MEMORY_MESSAGE("ABC", pieces[1]->string, pieces[1]->length, "second segment should contain 'ABC'");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[1]->length,
+                                   "second segment should have length 3");
+  TEST_ASSERT_EQUAL_MEMORY_MESSAGE("ABC", pieces[1]->string, pieces[1]->length,
+                                   "second segment should contain 'ABC'");
 
   destroy_delim_string(pieces);
   destroy_string(input);
@@ -59,10 +63,13 @@ void test_string_delim_empty_delimiter(void) {
 
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces, "pieces array should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0], "first segment should not be NULL");
-  TEST_ASSERT_NULL_MESSAGE(pieces[1], "second segment should be NULL (end of array)");
+  TEST_ASSERT_NULL_MESSAGE(pieces[1],
+                           "second segment should be NULL (end of array)");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[0]->length, "first segment should have length 3");
-  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0]->string, "first segment string should not be NULL");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[0]->length,
+                                   "first segment should have length 3");
+  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0]->string,
+                               "first segment string should not be NULL");
 
   destroy_delim_string(pieces);
   destroy_string(input);
@@ -75,13 +82,18 @@ void test_string_delim_pointer_underflow(void) {
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces, "pieces array should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0], "first segment should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[1], "second segment should not be NULL");
-  TEST_ASSERT_NULL_MESSAGE(pieces[2], "second segment should be NULL (end of array)");
+  TEST_ASSERT_NULL_MESSAGE(pieces[2],
+                           "second segment should be NULL (end of array)");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[0]->length, "first segment should have length 3");
-  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0]->string, "first segment string should not be NULL");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[0]->length,
+                                   "first segment should have length 3");
+  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0]->string,
+                               "first segment string should not be NULL");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[1]->length, "second segment should have length 3");
-  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[1]->string, "second segment string should not be NULL");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(3, pieces[1]->length,
+                                   "second segment should have length 3");
+  TEST_ASSERT_NOT_NULL_MESSAGE(pieces[1]->string,
+                               "second segment string should not be NULL");
 
   destroy_delim_string(pieces);
   destroy_string(input);
@@ -93,10 +105,15 @@ void test_string_delim_delimiter_longer_than_input(void) {
 
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces, "pieces array should not be NULL");
   TEST_ASSERT_NOT_NULL_MESSAGE(pieces[0], "first segment should not be NULL");
-  TEST_ASSERT_NULL_MESSAGE(pieces[1], "second segment should be NULL (end of array)");
+  TEST_ASSERT_NULL_MESSAGE(pieces[1],
+                           "second segment should be NULL (end of array)");
 
-  TEST_ASSERT_EQUAL_size_t_MESSAGE(input->length, pieces[0]->length, "original string should be preserved when delimiter is longer than input");
-  TEST_ASSERT_EQUAL_MEMORY_MESSAGE(input->string, pieces[0]->string, pieces[0]->length, "segment should equal original string");
+  TEST_ASSERT_EQUAL_size_t_MESSAGE(input->length, pieces[0]->length,
+                                   "original string should be preserved when "
+                                   "delimiter is longer than input");
+  TEST_ASSERT_EQUAL_MEMORY_MESSAGE(input->string, pieces[0]->string,
+                                   pieces[0]->length,
+                                   "segment should equal original string");
 
   destroy_delim_string(pieces);
   destroy_string(input);

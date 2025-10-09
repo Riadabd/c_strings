@@ -1,7 +1,7 @@
-#include "unity.h"
-#include "c_string.h"
-
 #include <string.h>
+
+#include "c_string.h"
+#include "unity.h"
 
 static c_string* make_string(const char* literal) {
   CStringResult result = string_from_char(literal, (int)strlen(literal));
@@ -35,7 +35,8 @@ void test_trim_char_returns_copy_when_character_missing(void) {
   TEST_ASSERT_NOT_NULL(trimmed.value);
   TEST_ASSERT_NOT_EQUAL(input, trimmed.value);
   TEST_ASSERT_EQUAL_size_t(input->length, trimmed.value->length);
-  TEST_ASSERT_EQUAL_MEMORY(input->string, trimmed.value->string, trimmed.value->length);
+  TEST_ASSERT_EQUAL_MEMORY(input->string, trimmed.value->string,
+                           trimmed.value->length);
 
   destroy_string(trimmed.value);
   destroy_string(input);

@@ -40,13 +40,15 @@ CStringResult string_from_char(const char* s, const int length);
 // Start and End are inclusive bounds
 CStringResult sub_string(c_string* s, size_t start, size_t end);
 
-// Return string inside c_string with a null-terminator in case an external function requires it
+// Return string inside c_string with a null-terminator in case an external
+// function requires it
 char* get_null_terminated_string(c_string* s);
 
 /* Free the string's content and the string itself */
 void destroy_string(c_string* input);
 
-/* Help function used to free the memory used by the c_string** in string_delim */
+/* Help function used to free the memory used by the c_string** in string_delim
+ */
 void destroy_delim_string(c_string** s);
 
 /* Concatenate input into string s */
@@ -92,4 +94,4 @@ CStringResult int_to_string(int x);
 // TODO: Check resources on how this can be implemented
 CStringResult float_to_string(double x);
 
-const char *cstring_status_str(CStringStatus status);
+const char* cstring_status_str(CStringStatus status);
