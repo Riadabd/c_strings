@@ -19,9 +19,12 @@
 
 // Holds the result of validating a UTF-8 buffer so we can return both status
 // and a code-point count without re-scanning.
+// Boolean follows size_t to avoid clang warning about padding. Struct is still
+// aligned at 16 bytes (8 + 1) , but this is now between the boolean and the
+// struct boundary (instead of the boolean and size_t).
 typedef struct {
-  bool valid;
   size_t codepoints;
+  bool valid;
 } Utf8Analysis;
 
 static Utf8Analysis analyze_utf8(const char* data, size_t length) {
