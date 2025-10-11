@@ -130,64 +130,6 @@ static bool update_utf8_metadata(c_string* s) {
   return analysis.valid;
 }
 
-// Convert integer value to char*
-static char* itoa_c(int value, char* result, int base) {
-  // Check if the base is valid
-  if (base < 2 || base > 36) {
-    result = NULL;
-    return result;
-  }
-
-  char *ptr = result, *ptr1 = result, tmp_char;
-  int tmp_value;
-
-  do {
-    tmp_value = value;
-    value /= base;
-    *ptr++ =
-        "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxy"
-        "z"[35 + (tmp_value - value * base)];
-  } while (value);
-
-  // Apply negative sign
-  if (tmp_value < 0) *ptr++ = '-';
-  //*ptr-- = '\0';
-  ptr--;
-  while (ptr1 < ptr) {
-    tmp_char = *ptr;
-    *ptr-- = *ptr1;
-    *ptr1++ = tmp_char;
-  }
-
-  return result;
-}
-
-// Count number of digits
-static unsigned int count_bchop(unsigned int n) {
-  int r = 1;
-
-  if (n >= 100000000) {
-    r += 8;
-    n /= 100000000;
-  }
-
-  if (n >= 10000) {
-    r += 4;
-    n /= 10000;
-  }
-
-  if (n >= 100) {
-    r += 2;
-    n /= 100;
-  }
-
-  if (n >= 10) {
-    r += 1;
-  }
-
-  return r;
-}
-
 // Create string from an input
 void create_string(c_string* s, size_t length, char* input) {
   s->length = length;
@@ -679,62 +621,44 @@ CStringResult trim_char(const c_string* s, const char c) {
 
 CStringResult to_lower(const c_string* s);
 
-CStringResult int_to_string(int x) {
+CStringResult string_from_printf(const char* fmt, ...) {
   CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
-  int length = snprintf(NULL, 0, "%d", x);
+  va_list args;
+  va_start(args, fmt);
+  int length = vsnprintf(NULL, 0, fmt, args);
+  va_end(args);
+
+  // Malformed format strings, encoding errors or other problems can make
+  // vsnprintf return a negative value instead of a byte count.
   if (length < 0) {
     result.status = CSTRING_ERR_INTERNAL;
     return result;
   }
 
-  size_t buffer_size = (size_t)length + 1;
-  char* s = malloc(buffer_size);
-  if (!s) {
-    result.status = CSTRING_ERR_NO_MEMORY;
-    return result;
-  }
+  size_t buf_size = (size_t)(length + 1);
+  char* buf = malloc(buf_size);
 
-  if (!itoa_c(x, s, 10)) {
-    free(s);
+  va_start(args, fmt);
+  int written = vsnprintf(buf, buf_size, fmt, args);
+  va_end(args);
+
+  // Live state (locale changes, shared buffers) can diverge between the probe
+  // and this write, so bail out if the second pass fails or needs more space.
+  if (written < 0 || written > length) {
+    free(buf);
     result.status = CSTRING_ERR_INTERNAL;
     return result;
   }
 
-  CStringResult new_string = string_from_char(s, length);
-  free(s);
-
-  return new_string;
+  CStringResult wrapped = string_from_char(buf, length);
+  free(buf);
+  return wrapped;
 }
 
-// TODO: Check resources on how this can be implemented
-CStringResult float_to_string(double x) {
-  CStringResult result = {.value = NULL, .status = CSTRING_OK};
+CStringResult int_to_string(int x) { return string_from_printf("%d", x); }
 
-  int len = snprintf(NULL, 0, "%g", x);
-  if (len < 0) {
-    result.status = CSTRING_ERR_INTERNAL;
-    return result;
-  }
-
-  size_t buffer_size = (size_t)len + 1;
-  char* s = malloc(buffer_size);
-  if (!s) {
-    result.status = CSTRING_ERR_NO_MEMORY;
-    return result;
-  }
-
-  if (snprintf(s, buffer_size, "%g", x) < 0) {
-    free(s);
-    result.status = CSTRING_ERR_INTERNAL;
-    return result;
-  }
-
-  CStringResult new_string = string_from_char(s, len);
-  free(s);
-
-  return new_string;
-}
+CStringResult double_to_string(double x) { return string_from_printf("%g", x); }
 
 const char* cstring_status_str(CStringStatus status) {
   switch (status) {
