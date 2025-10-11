@@ -12,11 +12,11 @@ TODO
 
 # Potential Improvements
 
-[x] Add tests
-[x] Add a fuzzing harness using `afl++` and fuzz the codebase
-[x] Add UTF-8 support
-[] Experiment with arenas (this will help avoid `malloc`, `calloc` and `free` calls for every single (de-)allocation)
-[] Implement a mini-regex engine
+- [x] Add tests
+- [x] Add a fuzzing harness using `afl++` and fuzz the codebase
+- [x] Add UTF-8 support
+- [ ] Experiment with arenas (this will help avoid `malloc`, `calloc` and `free` calls for every single (de-)allocation)
+- [ ] Implement a mini-regex engine
 
 # Development
 
