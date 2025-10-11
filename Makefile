@@ -1,8 +1,53 @@
 OUT_DIR := out
 CC ?= gcc
+GCC_LINUX_CC ?= /opt/homebrew/bin/gcc-15
 CEEDLING ?= /opt/homebrew/lib/ruby/gems/3.4.0/bin/ceedling
 LIB_OBJ := $(OUT_DIR)/c_string.o
 LIB := $(OUT_DIR)/libc_strings.a
+
+# Compiler flags
+
+## Common
+
+CFLAGS_COMMON = -std=c17 -O2 -g -fstack-protector-strong \
+								-Wall -Wextra -Wpedantic \
+								-Wconversion -Wshadow -Wnull-dereference \
+								-Wdouble-promotion -Wformat=2 -Wimplicit-fallthrough
+
+## Clang
+
+CFLAGS_CLANG_SPECIFIC = -Wcomma -Wunreachable-code-aggressive
+
+CFLAGS_CLANG = $(CFLAGS_COMMON) $(CFLAGS_CLANG_SPECIFIC)
+
+## GCC
+
+# -U_FORTIFY_SOURCE is added ahead of -D_FORTIFY_SOURCE=2 to no longer trigger the macro redefinition warning when the toolchain predefines _FORTIFY_SOURCE.
+CFLAGS_GCC_SPECIFIC = -Wduplicated-cond -Wduplicated-branches \
+                  -Wtrampolines -Wlogical-op -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
+
+CFLAGS_GCC = $(CFLAGS_COMMON) $(CFLAGS_GCC_SPECIFIC)
+
+CPU_FLAGS ?= -march=native
+
+## Sanitizers
+
+SANITIZERS ?= address,undefined
+
+ifneq ($(strip $(SANITIZERS)),)
+SANITIZE_LIST := $(subst ,, ,$(SANITIZERS))
+
+ifneq (,$(filter address,$(SANITIZE_LIST)))
+ifneq (,$(filter thread,$(SANITIZE_LIST)))
+$(error Sanitizers 'address' and 'thread' cannot be combined. Set SANITIZERS=thread to use ThreadSanitizer.)
+endif
+endif
+
+SANITIZE_FLAGS = -fsanitize=$(SANITIZERS)
+SANITIZE_CFLAGS = $(SANITIZE_FLAGS) -fno-omit-frame-pointer
+else
+SANITIZE_CFLAGS =
+endif
 
 # Fetch all .c and h. files in the repo except those inside ./out/ and
 # ./tests/build/* .
@@ -65,13 +110,13 @@ clang_win: | $(OUT_DIR)
 	clang -std=c99 -Weverything -g -fsanitize=undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/clang_win_test.exe
 
 clang_linux: | $(OUT_DIR)
-	clang -std=c99 -Weverything -g -fsanitize=address,undefined -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/clang_linux_test
+	clang $(CFLAGS_CLANG) $(CPU_FLAGS) $(SANITIZE_CFLAGS) c_string.c main.c -o $(OUT_DIR)/clang_linux_test
 
 gcc_win: | $(OUT_DIR)
 	gcc -std=c99 -Wall -Wextra -g -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/gcc_win_test.exe
 
 gcc_linux: | $(OUT_DIR)
-	gcc -std=c99 -Wall -Wextra -pedantic -g -fstack-protector-all -O2 -D_FORTIFY_SOURCE=2 -fno-omit-frame-pointer -march=native c_string.c main.c -o $(OUT_DIR)/gcc_linux_test
+	$(GCC_LINUX_CC) $(CFLAGS_GCC) $(CPU_FLAGS) $(SANITIZE_CFLAGS) c_string.c main.c -o $(OUT_DIR)/gcc_linux_test
 
 #
 # Testing
