@@ -91,7 +91,6 @@ CStringResult to_lower(const c_string* s);
 
 CStringResult int_to_string(int x);
 
-// TODO: Check resources on how this can be implemented
-CStringResult float_to_string(double x);
+CStringResult double_to_string(double x);
 
 const char* cstring_status_str(CStringStatus status);
