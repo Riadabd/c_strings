@@ -388,11 +388,15 @@ CStringResult sub_string_codepoint(c_string* s, size_t start, size_t end) {
   // Parse input string and create a codepoint array length
   size_t i = 0;
   size_t codepoints = 0;
-  size_t* length_per_codepoint =
-      (size_t*)calloc(s->codepoint_length, sizeof(size_t));
+
   // Store the distance in bytes from the beginning of the string until the
-  // `start` index
+  // `start` index.
+  // This helps us track where the memcpy has to start from.
   size_t byte_distance_until_start = 0;
+  // Store the distance in bytes from the beginning of the string until the
+  // `end` index.
+  // This helps us calculate the total byte length of the resulting sub-string.
+  size_t byte_distance_until_end = 0;
 
   // Walk the buffer one UTF-8 sequence at a time until all bytes are
   // consumed.
@@ -406,15 +410,18 @@ CStringResult sub_string_codepoint(c_string* s, size_t start, size_t end) {
       return result;
     }
 
-    length_per_codepoint[codepoints] = codepoint_length;
     if (codepoints < start) {
       byte_distance_until_start += codepoint_length;
     }
+    if (codepoints <= end) {
+      byte_distance_until_end += codepoint_length;
+    }
+
     // Successful sequence: advance to the next lead byte and bump the total.
     codepoints += 1;
   }
 
-  size_t length = length_per_codepoint[end] + length_per_codepoint[start];
+  size_t length = byte_distance_until_end - byte_distance_until_start;
   c_string* new_s = calloc(1, sizeof(c_string));
   if (!new_s) {
     result.status = CSTRING_ERR_NO_MEMORY;
@@ -441,8 +448,7 @@ CStringResult sub_string_codepoint(c_string* s, size_t start, size_t end) {
   memcpy(new_s->string, s->string + byte_distance_until_start, length);
 
   result.value = new_s;
-  result.value->length =
-      length_per_codepoint[end] + length_per_codepoint[start];
+  result.value->length = length;
   result.value->codepoint_length = end - start + 1;
   result.value->utf8_valid = true;
 
