@@ -343,26 +343,51 @@
 
 :tools:
   :test_compiler:
-    :executable: gcc
+    :executable: clang
     :arguments:
-      - -std=c99
+      - -std=c17
+      - -O2
+      - -g
+      - -fstack-protector-strong
       - -Wall
       - -Wextra
-      - -pedantic
-      - -g
-      - -fstack-protector-all
-      - -O2
-      - -D_FORTIFY_SOURCE=2
-      - -fno-omit-frame-pointer
+      - -Wpedantic
+      - -Wconversion
+      - -Wshadow
+      - -Wnull-dereference
+      - -Wdouble-promotion
+      - -Wformat=2
+      - -Wimplicit-fallthrough
+      - -Wcomma
+      - -Wunreachable-code-aggressive
       - -march=native
+      - -fsanitize=address,undefined
+      - -fno-omit-frame-pointer
       - -I"${5}"
       - -D"${6}"
       - -c "${1}"
       - -o "${2}"
   :test_linker:
-    :executable: gcc
+    :executable: clang
     :arguments:
-      - -fstack-protector-all
+      - -std=c17
+      - -O2
+      - -g
+      - -fstack-protector-strong
+      - -Wall
+      - -Wextra
+      - -Wpedantic
+      - -Wconversion
+      - -Wshadow
+      - -Wnull-dereference
+      - -Wdouble-promotion
+      - -Wformat=2
+      - -Wimplicit-fallthrough
+      - -Wcomma
+      - -Wunreachable-code-aggressive
+      - -march=native
+      - -fsanitize=address,undefined
+      - -fno-omit-frame-pointer
       - -o "${2}"
       - "${1}"
 ...
