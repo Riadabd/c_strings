@@ -58,7 +58,7 @@ static void exercise_library(const uint8_t* data, size_t size) {
       end = start;
     }
 
-    CStringResult slice = sub_string(input, start, end);
+    CStringResult slice = sub_string_checked(input, start, end);
     if (slice.status == CSTRING_OK && slice.value) {
       destroy_string(slice.value);
     }
