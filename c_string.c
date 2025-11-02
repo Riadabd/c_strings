@@ -28,6 +28,81 @@ typedef struct {
   bool valid;
 } Utf8Analysis;
 
+// Attempt to parse a single UTF-8 sequence starting at *index. Advances the
+// index on success.
+static bool consume_utf8_sequence(const char* data, size_t length,
+                                  size_t* index, size_t* sequence_length_out) {
+  if (!data || !index || *index >= length) {
+    return false;
+  }
+
+  size_t i = *index;
+  unsigned char byte = (unsigned char)data[i];
+  size_t sequence_length = 0;
+  uint32_t codepoint = 0;
+
+  // Determine the expected length of the UTF-8 sequence from the lead byte.
+  if (byte < 0x80) {
+    // 0xxxxxxx -> ASCII, single byte sequence.
+    sequence_length = 1;
+    codepoint = byte;
+  } else if ((byte & 0xE0) == 0xC0) {
+    // 110xxxxx -> two-byte sequence.
+    sequence_length = 2;
+    codepoint = byte & 0x1F;
+  } else if ((byte & 0xF0) == 0xE0) {
+    // 1110xxxx -> three-byte sequence.
+    sequence_length = 3;
+    codepoint = byte & 0x0F;
+  } else if ((byte & 0xF8) == 0xF0) {
+    // 11110xxx -> four-byte sequence.
+    sequence_length = 4;
+    codepoint = byte & 0x07;
+  } else {
+    // Lead byte does not match any UTF-8 pattern.
+    return false;
+  }
+
+  // Bail out if the buffer ends before the sequence completes.
+  if (i + sequence_length > length) {
+    return false;
+  }
+
+  for (size_t j = 1; j < sequence_length; j++) {
+    unsigned char continuation = (unsigned char)data[i + j];
+    // All continuation bytes must start with the "10" prefix.
+    if ((continuation & 0xC0) != 0x80) {
+      return false;
+    }
+    codepoint = (codepoint << 6) | (continuation & 0x3F);
+  }
+
+  // Reject overlong encodings and surrogate/invalid ranges to preserve UTF-8
+  // invariants.
+  if (sequence_length == 2 && codepoint < 0x80) {
+    return false;  // overlong encoding
+  }
+  if (sequence_length == 3) {
+    if (codepoint < 0x800) {
+      return false;  // overlong encoding
+    }
+    if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
+      return false;  // UTF-16 surrogate range is invalid in UTF-8
+    }
+  }
+  if (sequence_length == 4) {
+    if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
+      return false;
+    }
+  }
+
+  if (sequence_length_out) {
+    *sequence_length_out = sequence_length;
+  }
+  *index = i + sequence_length;
+  return true;
+}
+
 static Utf8Analysis analyze_utf8(const char* data, size_t length) {
   Utf8Analysis result = {.valid = false, .codepoints = 0};
 
@@ -43,68 +118,12 @@ static Utf8Analysis analyze_utf8(const char* data, size_t length) {
 
   // Walk the buffer one UTF-8 sequence at a time until all bytes are consumed.
   while (i < length) {
-    unsigned char byte = (unsigned char)data[i];
-    size_t sequence_length = 0;
-    uint32_t codepoint = 0;
-
-    // Determine the expected length of the UTF-8 sequence from the lead byte.
-    if (byte < 0x80) {
-      // 0xxxxxxx → ASCII, single byte sequence.
-      sequence_length = 1;
-      codepoint = byte;
-    } else if ((byte & 0xE0) == 0xC0) {
-      // 110xxxxx → two-byte sequence.
-      sequence_length = 2;
-      codepoint = byte & 0x1F;
-    } else if ((byte & 0xF0) == 0xE0) {
-      // 1110xxxx → three-byte sequence.
-      sequence_length = 3;
-      codepoint = byte & 0x0F;
-    } else if ((byte & 0xF8) == 0xF0) {
-      // 11110xxx → four-byte sequence.
-      sequence_length = 4;
-      codepoint = byte & 0x07;
-    } else {
-      // Lead byte does not match any UTF-8 pattern.
+    if (!consume_utf8_sequence(data, length, &i, NULL)) {
       return result;
-    }
-
-    // Bail out if the buffer ends before the sequence completes.
-    if (i + sequence_length > length) {
-      return result;
-    }
-
-    for (size_t j = 1; j < sequence_length; j++) {
-      unsigned char continuation = (unsigned char)data[i + j];
-      // All continuation bytes must start with the "10" prefix.
-      if ((continuation & 0xC0) != 0x80) {
-        return result;
-      }
-      codepoint = (codepoint << 6) | (continuation & 0x3F);
-    }
-
-    // Reject overlong encodings and surrogate/invalid ranges to preserve UTF-8
-    // invariants.
-    if (sequence_length == 2 && codepoint < 0x80) {
-      return result;  // overlong encoding
-    }
-    if (sequence_length == 3) {
-      if (codepoint < 0x800) {
-        return result;  // overlong encoding
-      }
-      if (codepoint >= 0xD800 && codepoint <= 0xDFFF) {
-        return result;  // UTF-16 surrogate range is invalid in UTF-8
-      }
-    }
-    if (sequence_length == 4) {
-      if (codepoint < 0x10000 || codepoint > 0x10FFFF) {
-        return result;
-      }
     }
 
     // Successful sequence: advance to the next lead byte and bump the total.
     codepoints += 1;
-    i += sequence_length;
   }
 
   result.valid = true;
