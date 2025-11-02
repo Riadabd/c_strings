@@ -31,7 +31,7 @@ void test_string_from_char_rejects_invalid_utf8(void) {
   const char payload[] = {(char)0xC3, (char)0x28};  // invalid continuation
   CStringResult result = string_from_char(payload, (int)sizeof(payload));
 
-  TEST_ASSERT_EQUAL_INT(CSTRING_ERR_INVALID_ARG, result.status);
+  TEST_ASSERT_EQUAL_INT(CSTRING_ERR_INVALID_UTF8, result.status);
   TEST_ASSERT_NULL(result.value);
 }
 
@@ -72,7 +72,7 @@ void test_sub_string_retains_utf8_metadata(void) {
   c_string* original = make_string("héł🧊");
 
   // Extract the first two code points (bytes 0-2 cover 'h' + two-byte 'é').
-  CStringResult slice = sub_string(original, 0, 2);
+  CStringResult slice = sub_string_checked(original, 0, 2);
 
   TEST_ASSERT_EQUAL_INT(CSTRING_OK, slice.status);
   TEST_ASSERT_NOT_NULL(slice.value);
