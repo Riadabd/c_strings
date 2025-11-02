@@ -356,6 +356,99 @@ CStringResult sub_string_checked(c_string* s, size_t start, size_t end) {
   return result;
 }
 
+// start and end refer to codepoint lengths.
+// In case the input string contains a codepoint with a length > 1, we want
+// to make it easier for the user to fetch a sub-string without having to think
+// about actual byte lengths.
+CStringResult sub_string_codepoint(c_string* s, size_t start, size_t end) {
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
+
+  if (!s || !s->string) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  if (s->codepoint_length == 0) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  if (!s->utf8_valid) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  // end is now compared against the string's codepoint length instead of the
+  // byte one.
+  if (start > end || end >= s->codepoint_length) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  // Parse input string and create a codepoint array length
+  size_t i = 0;
+  size_t codepoints = 0;
+  size_t* length_per_codepoint =
+      (size_t*)calloc(s->codepoint_length, sizeof(size_t));
+  // Store the distance in bytes from the beginning of the string until the
+  // `start` index
+  size_t byte_distance_until_start = 0;
+
+  // Walk the buffer one UTF-8 sequence at a time until all bytes are
+  // consumed.
+  while (i < s->length) {
+    size_t codepoint_length = 0;
+    if (!consume_utf8_sequence(s->string, s->length, &i, &codepoint_length)) {
+      // TODO: At this point, we know that we have a valid UTF-8 string because
+      // the input c_string has already been created and checked at a previous
+      // point in time.
+      result.status = CSTRING_ERR_INVALID_UTF8;
+      return result;
+    }
+
+    length_per_codepoint[codepoints] = codepoint_length;
+    if (codepoints < start) {
+      byte_distance_until_start += codepoint_length;
+    }
+    // Successful sequence: advance to the next lead byte and bump the total.
+    codepoints += 1;
+  }
+
+  size_t length = length_per_codepoint[end] + length_per_codepoint[start];
+  c_string* new_s = calloc(1, sizeof(c_string));
+  if (!new_s) {
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
+  new_s->length = length;
+
+  if (length == 0) {
+    new_s->string = NULL;
+    new_s->codepoint_length = 0;
+    new_s->utf8_valid = true;
+    result.value = new_s;
+    return result;
+  }
+
+  new_s->string = malloc(length);
+  if (!new_s->string) {
+    free(new_s);
+    result.status = CSTRING_ERR_NO_MEMORY;
+    return result;
+  }
+
+  memcpy(new_s->string, s->string + byte_distance_until_start, length);
+
+  result.value = new_s;
+  result.value->length =
+      length_per_codepoint[end] + length_per_codepoint[start];
+  result.value->codepoint_length = end - start + 1;
+  result.value->utf8_valid = true;
+
+  return result;
+}
+
 // Return string inside c_string with a null-terminator in case an external
 // function requires it
 char* get_null_terminated_string(c_string* s) {

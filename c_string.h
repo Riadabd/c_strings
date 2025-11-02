@@ -39,7 +39,10 @@ CStringResult string_new(const c_string* s);
 CStringResult string_from_char(const char* s, const int length);
 
 // Start and End are inclusive bounds
-CStringResult sub_string(c_string* s, size_t start, size_t end);
+CStringResult sub_string_checked(c_string* s, size_t start, size_t end);
+
+// Start and End are inclusive bounds
+CStringResult sub_string_codepoint(c_string* s, size_t start, size_t end);
 
 // Return string inside c_string with a null-terminator in case an external
 // function requires it
