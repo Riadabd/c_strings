@@ -290,7 +290,7 @@ CStringResult string_from_char(const char* s, const int length) {
     // Reject malformed UTF-8 so we never hand back an invalid `c_string`.
     free(new_s->string);
     free(new_s);
-    result.status = CSTRING_ERR_INVALID_ARG;
+    result.status = CSTRING_ERR_INVALID_UTF8;
     return result;
   }
 
@@ -298,8 +298,10 @@ CStringResult string_from_char(const char* s, const int length) {
   return result;
 }
 
-// Start and end are inclusive bounds
-CStringResult sub_string(c_string* s, size_t start, size_t end) {
+// Start and end are inclusive bounds.
+// This method will error in case the resulting sub-string is an invalid
+// UTF8 construct.
+CStringResult sub_string_checked(c_string* s, size_t start, size_t end) {
   CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
   if (!s || !s->string) {
@@ -328,6 +330,8 @@ CStringResult sub_string(c_string* s, size_t start, size_t end) {
 
   if (length == 0) {
     new_s->string = NULL;
+    new_s->codepoint_length = 0;
+    new_s->utf8_valid = true;
     result.value = new_s;
     return result;
   }
@@ -340,6 +344,13 @@ CStringResult sub_string(c_string* s, size_t start, size_t end) {
   }
 
   memcpy(new_s->string, s->string + start, length);
+
+  if (!update_utf8_metadata(new_s)) {
+    free(new_s->string);
+    free(new_s);
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
 
   result.value = new_s;
   return result;

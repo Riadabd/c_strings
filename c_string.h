@@ -19,6 +19,7 @@ typedef enum {
   CSTRING_ERR_IO,
   CSTRING_ERR_OVERFLOW,
   CSTRING_ERR_INTERNAL,
+  CSTRING_ERR_INVALID_UTF8,
 } CStringStatus;
 
 typedef struct {
