@@ -6,9 +6,79 @@ c_strings is a C library for dealing with and manipulating strings. It tries to 
 
 c_strings provides `create_string(c_string*, char*)` and `get_null_terminated_string(c_string*)` to transform a string into `c_string*` and `char*`, respectively. This allows the library to be used in contexts where a traditional null-terminated string is required.
 
-# Example Usage
+# Example Usages
 
-TODO
+## String creation and mutation
+
+Below is a minimal program that demonstrates the typical lifecycle of a `c_string`: creation, mutation, conversion, and cleanup. All routines return either `void` or a `CStringResult` that should be checked for `status == CSTRING_OK` before using the returned value.
+
+```c
+#include "c_string.h"
+#include <stdio.h>
+
+int main(void) {
+    c_string name = {0};
+
+    // Create from an existing buffer (does not copy input; manage lifetime yourself).
+    char raw[] = " Alice ";
+    create_string(&name, sizeof(raw) - 1, raw);
+
+    // Modify in place and concatenate new data.
+    string_modify(&name, "Alice");
+    string_concat(&name, " Smith");
+
+    // Convert while preserving storage guarantees.
+    CStringResult lower = to_lower(&name);
+    if (lower.status == CSTRING_OK) {
+        printf("lowercase: %s\n", get_null_terminated_string(lower.value));
+        destroy_string(lower.value);
+    }
+
+    // Pretty-print with color support.
+    print_colored(&name, "Green");
+
+    destroy_string(&name);
+    return 0;
+}
+```
+
+## Slicing and delimiters
+
+The next example focuses on slicing a string and iterating over delimiter-separated tokens.
+
+```c
+#include "c_string.h"
+#include <stdio.h>
+
+static void print_token(c_string* token, size_t index) {
+    printf("token[%zu]=%s\n", index, get_null_terminated_string(token));
+}
+
+int main(void) {
+    CStringResult sentence = string_from_char("Hello,World,UTF-8", 18);
+    if (sentence.status != CSTRING_OK) return 1;
+
+    // Extract the first word via byte indices (inclusive).
+    CStringResult hello = sub_string_checked(sentence.value, 0, 4);
+    if (hello.status == CSTRING_OK) {
+        printf("prefix=%s\n", get_null_terminated_string(hello.value));
+        destroy_string(hello.value);
+    }
+
+    // Split the sentence at commas and inspect each token.
+    c_string** tokens = string_delim(sentence.value, ",");
+    size_t count = get_delim_string_length(tokens);
+    for (size_t i = 0; i < count; ++i) {
+        print_token(tokens[i], i);
+        destroy_string(tokens[i]);
+    }
+    destroy_delim_string(tokens);
+
+    destroy_string(sentence.value);
+    return 0;
+}
+```
+
 
 # Potential Improvements
 
