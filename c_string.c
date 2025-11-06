@@ -240,7 +240,7 @@ CStringResult string_new(const c_string* s) {
     // Copy succeeded at the byte level, but the contents are invalid UTF-8.
     free(new_s->string);
     free(new_s);
-    result.status = CSTRING_ERR_INVALID_ARG;
+    result.status = CSTRING_ERR_INVALID_UTF8;
     return result;
   }
 
@@ -348,7 +348,7 @@ CStringResult sub_string_checked(c_string* s, size_t start, size_t end) {
   if (!update_utf8_metadata(new_s)) {
     free(new_s->string);
     free(new_s);
-    result.status = CSTRING_ERR_INVALID_ARG;
+    result.status = CSTRING_ERR_INVALID_UTF8;
     return result;
   }
 
