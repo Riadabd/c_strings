@@ -88,6 +88,57 @@ int main(void) {
 - [ ] Experiment with arenas (this will help avoid `malloc`, `calloc` and `free` calls for every single (de-)allocation)
 - [ ] Implement a mini-regex engine
 
+## UTF-8 Lowercasing via utf8proc
+
+`tolower` from the C standard library only understands single-byte characters in the active locale. If you need a Unicode-aware `to_lower` while using this repo, a good option is [utf8proc](https://juliastrings.github.io/utf8proc/). It is MIT-licensed, ~250 KB of tables, and ships as a single C file you can vendor or link against.
+
+### Building with utf8proc
+
+1. Clone or download utf8proc somewhere in your project tree (e.g. `deps/utf8proc`).
+2. Add the following to your `Makefile` (adjust paths as needed):
+   ```make
+   CFLAGS += -I$(PROJECT_ROOT)/deps/utf8proc
+   LDLIBS += $(PROJECT_ROOT)/deps/utf8proc/utf8proc.c
+   ```
+   Because utf8proc has no external dependencies, compiling the `.c` file directly keeps the build self-contained. If you prefer building a static lib, replace the last line with `$(PROJECT_ROOT)/deps/utf8proc/libutf8proc.a`.
+
+### Example adapter
+
+The snippet below shows how to wrap utf8proc so the rest of this library can keep using `CStringResult`. It relies on `utf8proc_map`, which returns freshly allocated UTF-8 bytes already case-folded.
+
+```c
+#include <utf8proc.h>
+
+CStringResult to_lower_utf8proc(const c_string* s) {
+  CStringResult result = {.value = NULL, .status = CSTRING_OK};
+
+  if (!s || !s->string) {
+    result.status = CSTRING_ERR_INVALID_ARG;
+    return result;
+  }
+
+  utf8proc_uint8_t* lowered = NULL;
+  utf8proc_ssize_t lowered_len = utf8proc_map(
+      (const utf8proc_uint8_t*)s->string, (utf8proc_ssize_t)s->length,
+      &lowered, UTF8PROC_STABLE | UTF8PROC_COMPOSE | UTF8PROC_CASEFOLD);
+
+  if (lowered_len < 0 || !lowered) {
+    result.status = CSTRING_ERR_INTERNAL;
+    return result;
+  }
+
+  CStringResult wrapped = string_from_char((const char*)lowered, (size_t)lowered_len);
+  utf8proc_free(lowered);
+  return wrapped;
+}
+```
+
+Notes:
+
+- `UTF8PROC_CASEFOLD` performs locale-independent lowercasing (Unicode CaseFolding). Add `UTF8PROC_STRIPMARK` or other flags if you need additional normalization.
+- `utf8proc_map` allocates with `malloc`; always free the buffer with `utf8proc_free` once it has been copied into a `c_string`.
+- If you need Turkish/Azeri locale-specific dotted/dotless-I behavior, call `utf8proc_map_custom` with a tailored table or post-process the output accordingly.
+
 # Development
 
 - `make lib` builds `out/libc_strings.a` for reuse in other binaries.

@@ -749,8 +749,6 @@ CStringResult trim_char(const c_string* s, const char c) {
   return result;
 }
 
-CStringResult to_lower(const c_string* s);
-
 CStringResult string_from_printf(const char* fmt, ...) {
   CStringResult result = {.value = NULL, .status = CSTRING_OK};
 
