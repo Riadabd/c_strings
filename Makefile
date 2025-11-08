@@ -14,6 +14,10 @@ CFLAGS_COMMON = -std=c17 -O2 -g -fstack-protector-strong \
 								-Wconversion -Wshadow -Wnull-dereference \
 								-Wdouble-promotion -Wformat=2 -Wimplicit-fallthrough
 
+CFLAGS_COMMON_NO_OPT := $(filter-out -O2,$(CFLAGS_COMMON))
+SYMBOL_CFLAGS := $(CFLAGS_COMMON_NO_OPT) -O0 -g3 -gdwarf-4 -fno-omit-frame-pointer
+SYMBOL_TARGET := $(OUT_DIR)/instrumented_test
+
 ## Clang
 
 CFLAGS_CLANG_SPECIFIC = -Wcomma -Wunreachable-code-aggressive
@@ -59,7 +63,7 @@ FUZZ_TARGET := $(FUZZ_OUT_DIR)/c_string_fuzzer
 AFL_CC ?= afl-clang-fast
 AFL_CFLAGS ?= -std=c99 -Wall -Wextra -pedantic -Wno-gnu-statement-expression -O1 -g
 
-.PHONY: lib test test-one clean fuzz-build fuzz fuzz-resume fmt fmt-check
+.PHONY: lib test test-one clean fuzz-build fuzz fuzz-resume fmt fmt-check symbols
 
 # This allows the user to run `make clang` and have the Makefile automatically
 # use the correct make target.
@@ -117,6 +121,9 @@ gcc_win: | $(OUT_DIR)
 
 gcc_linux: | $(OUT_DIR)
 	$(GCC_LINUX_CC) $(CFLAGS_GCC) $(CPU_FLAGS) $(SANITIZE_CFLAGS) c_string.c main.c -o $(OUT_DIR)/gcc_linux_test
+
+symbols: | $(OUT_DIR)
+	$(CC) $(SYMBOL_CFLAGS) $(CPU_FLAGS) c_string.c main.c -o $(SYMBOL_TARGET)
 
 #
 # Testing
