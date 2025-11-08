@@ -3,3 +3,8 @@
 .vscode/
 # AFL++ findings
 fuzz/findings/
+
+.DS_STORE
+
+# Trace files
+*.trace/
